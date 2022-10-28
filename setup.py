@@ -10,7 +10,10 @@ setup(
     packages=['cc_tools'],
     package_dir={'cc_tools': 'src'},
     # Needed for dependencies
-    install_requires=[],
+    install_requires=[
+        'bs4',
+        'requests'
+    ],
     # *strongly* suggested for sharing
     version='0.1',
     # The license can be anything you like

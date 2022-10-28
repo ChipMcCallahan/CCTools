@@ -1,3 +1,5 @@
 ###### Requirements without Version Specifiers ######`
+bs4
+requests
 
 ###### Requirements with Version Specifiers ######`
