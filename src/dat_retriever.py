@@ -11,7 +11,7 @@ class DATRetriever:
     def __init__(self):
         try:
             # Retrieve the list of all available CC1 sets from Gliderbot.
-            soup = BeautifulSoup(requests.get(GLIDERBOT_URL, timeout=10).text)
+            soup = BeautifulSoup(requests.get(GLIDERBOT_URL, timeout=10).text, "html.parser")
 
             # Ignore the first link, it is a link to parent directory.
             self.available_sets = [a.text for a in soup.find_all("a")[1:]]
