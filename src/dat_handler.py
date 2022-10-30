@@ -1,6 +1,7 @@
 """Classes for retrieving, parsing, and writing CC1 DAT files."""
 import io
 import struct
+import logging
 from collections import namedtuple
 import requests
 from bs4 import BeautifulSoup
@@ -37,7 +38,7 @@ class DATHandler:
         resp = requests.get(GLIDERBOT_URL + levelset, timeout=10)
 
         if resp.status_code < 300:
-            print(f"Successfully retrieved {GLIDERBOT_URL + levelset}.")
+            logging.info("Successfully retrieved %s.", GLIDERBOT_URL + levelset)
             self.cache[levelset] = resp.content
             return DATHandler.Parser.parse(resp.content)
 
@@ -110,7 +111,7 @@ class DATHandler:
                 elif field == 10:
                     movement = self.__parse_movement(content)
                 else:
-                    print("Encountered Unexpected Field " + str(field))
+                    logging.warning("Encountered Unexpected Field %s", str(field))
                     extra_fields.append((field, content))
 
             return DATHandler.Parser.Level(title, number, time, chips, hint, password,
