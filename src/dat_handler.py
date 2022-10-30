@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 GLIDERBOT_URL = "https://bitbusters.club/gliderbot/sets/cc1/"
 
 
-class DATRetriever:
+class DATHandler:
     """Class for retrieving DAT files from Gliderbot"""
     # pylint: disable=too-few-public-methods
     def __init__(self):
@@ -21,7 +21,7 @@ class DATRetriever:
         # Cache results as we retrieve sets to minimize HTTP requests.
         self.cache = {}
 
-    def get_set(self, levelset):
+    def fetch(self, levelset):
         """Retrieve a binary levelset by name from Gliderbot."""
         if levelset in self.cache:
             return self.cache[levelset]
