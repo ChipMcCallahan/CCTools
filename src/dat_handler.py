@@ -283,7 +283,7 @@ class DATHandler:
                 elif field == DATHandler.PASSWORD_FIELD and level.password:
                     writer_2.byte(field)
                     password_bytes = DATHandler.Writer.encrypt(level.password.encode("utf-8"))
-                    password_bytes += b'\x00 '
+                    password_bytes += b'\x00'
                     writer_2.byte(len(password_bytes))
                     writer_2.bytes(password_bytes)
                 elif field == DATHandler.HINT_FIELD and level.hint:
