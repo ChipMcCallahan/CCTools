@@ -137,10 +137,8 @@ class DATHandler:
                     extra_fields.append((field, content))
 
             return DATHandler.Parser.Level(title, number, time, chips, hint, password,
-                                           tuple(zip(top, bottom)
-                                                 ), traps, cloners, movement,
-                                           map_detail, tuple(
-                    field_numbers_in_order),
+                                           tuple(zip(top, bottom)), traps, cloners, movement,
+                                           map_detail, tuple(field_numbers_in_order),
                                            tuple(extra_fields))
 
         @staticmethod
@@ -163,8 +161,8 @@ class DATHandler:
             for _ in range(len(traps_bytes) // 10):
                 b_x, b_y = parser.short(), parser.short()
                 t_x, t_y = parser.short(), parser.short()
-                parser.short()  # open/closed, unused
-                controls.append((b_y * 32 + b_x, t_y * 32 + t_x))
+                open_or_shut = parser.short()
+                controls.append((b_y * 32 + b_x, t_y * 32 + t_x, open_or_shut))
             return tuple(controls)
 
         @staticmethod
@@ -271,9 +269,11 @@ class DATHandler:
                 elif field == DATHandler.TRAPS_FIELD and len(level.trap_controls) > 0:
                     writer_2.byte(field)
                     writer_2.byte(10 * len(level.trap_controls))
-                    for k, v in level.trap_controls:
+                    for t in level.trap_controls:
+                        k, v = t[0], t[1]
+                        open_or_shut = t[2] if len(t) > 2 else 0
                         writer_2.shorts(
-                            (k % 32, k // 32, v % 32, v // 32, 0))
+                            (k % 32, k // 32, v % 32, v // 32, open_or_shut))
                 elif field == DATHandler.CLONERS_FIELD and len(level.clone_controls) > 0:
                     writer_2.byte(field)
                     writer_2.byte(8 * len(level.clone_controls))
@@ -282,8 +282,8 @@ class DATHandler:
                             (k % 32, k // 32, v % 32, v // 32))
                 elif field == DATHandler.PASSWORD_FIELD and level.password:
                     writer_2.byte(field)
-                    password_bytes = DATHandler.Writer.encrypt(level.password.encode("utf-8")) + \
-                                     b'\x00 '
+                    password_bytes = DATHandler.Writer.encrypt(level.password.encode("utf-8"))
+                    password_bytes += b'\x00 '
                     writer_2.byte(len(password_bytes))
                     writer_2.bytes(password_bytes)
                 elif field == DATHandler.HINT_FIELD and level.hint:
