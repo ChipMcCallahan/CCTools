@@ -308,10 +308,10 @@ class DATHandler:
                     logging.warning("Field %s existed in level %s, but nothing was written. ",
                                     field, level)
 
-                remaining_bytes = writer_2.written()
-                writer_1.short(len(remaining_bytes))
-                writer_1.bytes(remaining_bytes)
-                return writer_1.written()
+            remaining_bytes = writer_2.written()
+            writer_1.short(len(remaining_bytes))
+            writer_1.bytes(remaining_bytes)
+            return writer_1.written()
 
         @staticmethod
         def write_layers(level_map):
