@@ -110,7 +110,7 @@ class DATHandler:
             bottom = self.__parse_layer(self.bytes(self.short()))
 
             title, password, hint = None, None, None
-            traps, cloners, movement = None, None, None
+            traps, cloners, movement = tuple(), tuple(), tuple()
             bytes_remaining = self.short()
             extra_fields = []
             field_numbers_in_order = []
