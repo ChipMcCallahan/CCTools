@@ -18,7 +18,8 @@ setup(
     version='0.1',
     # The license can be anything you like
     license='LICENSE',
-    description='Assorted tools for working with and displaying Chip\'s Challenge levels in DAT or C2M file format.',
+    description='Assorted tools for working with and displaying Chip\'s Challenge levels in DAT '
+                'or C2M file format.',
     # We will also need a readme eventually (there will be a warning)
     # long_description=open('README.txt').read(),
 )
