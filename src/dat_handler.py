@@ -6,6 +6,8 @@ from collections import namedtuple
 import requests
 from bs4 import BeautifulSoup
 
+from src.cc_binary_io import CCBinary
+
 GLIDERBOT_URL = "https://bitbusters.club/gliderbot/sets/cc1/"
 
 
@@ -62,12 +64,8 @@ class DATHandler:
         raise Exception(
             f"Failed to retrieve {GLIDERBOT_URL + levelset}. {resp.status_code}: {resp.reason}")
 
-    class Parser:
+    class Parser(CCBinary.Reader):
         """Class that parses raw bytes in DAT format."""
-
-        def __init__(self, raw_bytes=None):
-            self.bytes_io = io.BytesIO(raw_bytes)
-
         Levelset = namedtuple(
             "ParsedDATLevelset",
             ("levels",
@@ -183,22 +181,6 @@ class DATHandler:
                 monster_x, monster_y = parser.byte(), parser.byte()
                 movement.append(monster_y * 32 + monster_x)
             return tuple(movement)
-
-        def byte(self):
-            """Read a byte from IO."""
-            return struct.unpack("<B", self.bytes_io.read(1))[0]
-
-        def short(self):
-            """Read a short (2 bytes) from IO."""
-            return struct.unpack("<H", self.bytes_io.read(2))[0]
-
-        def long(self):
-            """Read a long (4 bytes) from IO."""
-            return struct.unpack("<L", self.bytes_io.read(4))[0]
-
-        def bytes(self, n_bytes):
-            """Read n bytes from IO."""
-            return self.bytes_io.read(n_bytes)
 
     class Writer:
         """Class that writes raw bytes in DAT format."""
