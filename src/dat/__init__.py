@@ -1,2 +1,2 @@
 """Module containing constants and primitives related to DAT files."""
-from .dat import *
+from .dat_constants import *
