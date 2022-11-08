@@ -1,6 +1,4 @@
 """Classes for retrieving, parsing, and writing CC1 DAT files."""
-import io
-import struct
 import logging
 from collections import namedtuple
 import requests
@@ -182,16 +180,13 @@ class DATHandler:
                 movement.append(monster_y * 32 + monster_x)
             return tuple(movement)
 
-    class Writer:
+    class Writer(CCBinary.Writer):
         """Class that writes raw bytes in DAT format."""
         ENCRYPTED_CHARS = [0xD8, 0xDB, 0xDA, 0xDD, 0xDC, 0xDF, 0xDE, 0xD1, 0xD0, 0xD3, 0xD2, 0xD5,
                            0xD4, 0xD7, 0xD6, 0xC9, 0xC8, 0xCB, 0xCA, 0xCD, 0xCC, 0xCF, 0xCE, 0xC1,
                            0xC0, 0xC3]
 
         STANDARD_FIELDS = (3, 4, 5, 6, 7, 10)
-
-        def __init__(self):
-            self.output = io.BytesIO(bytes())
 
         @staticmethod
         def write_set(levelset, *, filename=None):
@@ -325,31 +320,6 @@ class DATHandler:
                     writer.byte(c)
                 index += length
             return writer.written()
-
-        def byte(self, byte):
-            """Writes a byte to output."""
-            self.output.write(struct.pack("<B", byte))
-
-        def short(self, short):
-            """Writes a short (2 bytes) to output."""
-            self.output.write(struct.pack("<H", short))
-
-        def shorts(self, shorts):
-            """Writes a sequence of shorts (2 bytes) to output."""
-            for short in shorts:
-                self.short(short)
-
-        def long(self, long):
-            """Writes a long (4 bytes) to output."""
-            self.output.write(struct.pack("<L", long))
-
-        def bytes(self, bytes_to_write):
-            """Writes an arbitrary sequence of bytes to output."""
-            self.output.write(bytes_to_write)
-
-        def written(self):
-            """Returns all written bytes."""
-            return self.output.getvalue()
 
         @staticmethod
         def encrypt(input_to_encrypt):
