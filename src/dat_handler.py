@@ -1,30 +1,16 @@
 """Classes for retrieving, parsing, and writing CC1 DAT files."""
 import logging
-from collections import namedtuple
 import requests
 from bs4 import BeautifulSoup
 
 from src.cc_binary_io import CCBinary
+from src.dat import ParsedDATLevel, ParsedDATLevelset, DATConstants
 
 GLIDERBOT_URL = "https://bitbusters.club/gliderbot/sets/cc1/"
 
 
 class DATHandler:
     """Class for retrieving DAT files from Gliderbot"""
-    TITLE_FIELD = 3
-    TRAPS_FIELD = 4
-    CLONERS_FIELD = 5
-    PASSWORD_FIELD = 6
-    HINT_FIELD = 7
-    MOVEMENT_FIELD = 10
-    STANDARD_FIELDS = (
-        TITLE_FIELD,
-        TRAPS_FIELD,
-        CLONERS_FIELD,
-        PASSWORD_FIELD,
-        HINT_FIELD,
-        MOVEMENT_FIELD
-    )
 
     def __init__(self):
         raise TypeError("Cannot create 'DATHandler' instances.")
@@ -57,26 +43,6 @@ class DATHandler:
 
     class Parser(CCBinary.Reader):
         """Class that parses raw bytes in DAT format."""
-        Levelset = namedtuple(
-            "ParsedDATLevelset",
-            ("levels",
-             "magic_number"))
-        Level = namedtuple(
-            "ParsedDATLevel",
-            ("title",
-             "number",
-             "time",
-             "chips",
-             "hint",
-             "password",
-             "map",
-             "trap_controls",
-             "clone_controls",
-             "movement",
-             "map_detail",
-             "field_numbers_in_order",
-             "extra_fields"
-             ))
 
         @staticmethod
         def parse_set(raw_bytes):
@@ -84,8 +50,8 @@ class DATHandler:
             parser = DATHandler.Parser(raw_bytes)
             magic_number = parser.long()
             num_levels = parser.short()
-            return DATHandler.Parser.Levelset(
-                [parser.parse_level() for _ in range(num_levels)],
+            return ParsedDATLevelset(
+                tuple(parser.parse_level() for _ in range(num_levels)),
                 magic_number
             )
 
@@ -108,27 +74,27 @@ class DATHandler:
                 field_numbers_in_order.append(field)
                 content = self.bytes(length)
                 bytes_remaining -= length + 2
-                if field == DATHandler.TITLE_FIELD:
+                if field == DATConstants.TITLE_FIELD:
                     title = content[:-1].decode("utf-8")
-                elif field == DATHandler.TRAPS_FIELD:
+                elif field == DATConstants.TRAPS_FIELD:
                     traps = self.__parse_traps(content)
-                elif field == DATHandler.CLONERS_FIELD:
+                elif field == DATConstants.CLONERS_FIELD:
                     cloners = self.__parse_cloners(content)
-                elif field == DATHandler.PASSWORD_FIELD:
+                elif field == DATConstants.PASSWORD_FIELD:
                     password = ''.join([chr(b ^ 0x99) for b in content[:-1]])
-                elif field == DATHandler.HINT_FIELD:
+                elif field == DATConstants.HINT_FIELD:
                     hint = content[:-1].decode("utf-8")
-                elif field == DATHandler.MOVEMENT_FIELD:
+                elif field == DATConstants.MOVEMENT_FIELD:
                     movement = self.__parse_movement(content)
                 else:
                     logging.warning(
                         "Encountered Unexpected Field %s", str(field))
                     extra_fields.append((field, content))
 
-            return DATHandler.Parser.Level(title, number, time, chips, hint, password,
-                                           tuple(zip(top, bottom)), traps, cloners, movement,
-                                           map_detail, tuple(field_numbers_in_order),
-                                           tuple(extra_fields))
+            return ParsedDATLevel(title, number, time, chips, hint, password,
+                                  tuple(zip(top, bottom)), traps, cloners, movement,
+                                  map_detail, tuple(field_numbers_in_order),
+                                  tuple(extra_fields))
 
         @staticmethod
         def __parse_layer(layer_bytes):
@@ -175,11 +141,6 @@ class DATHandler:
 
     class Writer(CCBinary.Writer):
         """Class that writes raw bytes in DAT format."""
-        ENCRYPTED_CHARS = [0xD8, 0xDB, 0xDA, 0xDD, 0xDC, 0xDF, 0xDE, 0xD1, 0xD0, 0xD3, 0xD2, 0xD5,
-                           0xD4, 0xD7, 0xD6, 0xC9, 0xC8, 0xCB, 0xCA, 0xCD, 0xCC, 0xCF, 0xCE, 0xC1,
-                           0xC0, 0xC3]
-
-        STANDARD_FIELDS = (3, 4, 5, 6, 7, 10)
 
         @staticmethod
         def write_set(levelset, *, filename=None):
@@ -215,28 +176,28 @@ class DATHandler:
             writer_1.bytes(layer_2)
 
             writer_2 = DATHandler.Writer()
-            ordered_fields = level.field_numbers_in_order or DATHandler.Writer.STANDARD_FIELDS
+            ordered_fields = level.field_numbers_in_order or DATConstants.STANDARD_FIELDS
             ordered_fields = list(ordered_fields)
-            if level.title and DATHandler.TITLE_FIELD not in ordered_fields:
-                ordered_fields.append(DATHandler.TITLE_FIELD)
-            if len(level.trap_controls) > 0 and DATHandler.TRAPS_FIELD not in ordered_fields:
-                ordered_fields.append(DATHandler.TRAPS_FIELD)
-            if len(level.clone_controls) > 0 and DATHandler.CLONERS_FIELD not in ordered_fields:
-                ordered_fields.append(DATHandler.CLONERS_FIELD)
-            if level.password and DATHandler.PASSWORD_FIELD not in ordered_fields:
-                ordered_fields.append(DATHandler.PASSWORD_FIELD)
-            if level.hint and DATHandler.HINT_FIELD not in ordered_fields:
-                ordered_fields.append(DATHandler.HINT_FIELD)
-            if len(level.movement) > 0 and DATHandler.MOVEMENT_FIELD not in ordered_fields:
-                ordered_fields.append(DATHandler.MOVEMENT_FIELD)
+            if level.title and DATConstants.TITLE_FIELD not in ordered_fields:
+                ordered_fields.append(DATConstants.TITLE_FIELD)
+            if len(level.trap_controls) > 0 and DATConstants.TRAPS_FIELD not in ordered_fields:
+                ordered_fields.append(DATConstants.TRAPS_FIELD)
+            if len(level.clone_controls) > 0 and DATConstants.CLONERS_FIELD not in ordered_fields:
+                ordered_fields.append(DATConstants.CLONERS_FIELD)
+            if level.password and DATConstants.PASSWORD_FIELD not in ordered_fields:
+                ordered_fields.append(DATConstants.PASSWORD_FIELD)
+            if level.hint and DATConstants.HINT_FIELD not in ordered_fields:
+                ordered_fields.append(DATConstants.HINT_FIELD)
+            if len(level.movement) > 0 and DATConstants.MOVEMENT_FIELD not in ordered_fields:
+                ordered_fields.append(DATConstants.MOVEMENT_FIELD)
 
             for field in ordered_fields:
-                if field == DATHandler.TITLE_FIELD and level.title:
+                if field == DATConstants.TITLE_FIELD and level.title:
                     writer_2.byte(field)
                     title_bytes = level.title.encode('utf-8') + b'\x00'
                     writer_2.byte(len(title_bytes))
                     writer_2.bytes(title_bytes)
-                elif field == DATHandler.TRAPS_FIELD and len(level.trap_controls) > 0:
+                elif field == DATConstants.TRAPS_FIELD and len(level.trap_controls) > 0:
                     writer_2.byte(field)
                     writer_2.byte(10 * len(level.trap_controls))
                     for t in level.trap_controls:
@@ -244,30 +205,30 @@ class DATHandler:
                         open_or_shut = t[2] if len(t) > 2 else 0
                         writer_2.shorts(
                             (k % 32, k // 32, v % 32, v // 32, open_or_shut))
-                elif field == DATHandler.CLONERS_FIELD and len(level.clone_controls) > 0:
+                elif field == DATConstants.CLONERS_FIELD and len(level.clone_controls) > 0:
                     writer_2.byte(field)
                     writer_2.byte(8 * len(level.clone_controls))
                     for k, v in level.clone_controls:
                         writer_2.shorts(
                             (k % 32, k // 32, v % 32, v // 32))
-                elif field == DATHandler.PASSWORD_FIELD and level.password:
+                elif field == DATConstants.PASSWORD_FIELD and level.password:
                     writer_2.byte(field)
                     password_bytes = DATHandler.Writer.encrypt(level.password.encode("utf-8"))
                     password_bytes += b'\x00'
                     writer_2.byte(len(password_bytes))
                     writer_2.bytes(password_bytes)
-                elif field == DATHandler.HINT_FIELD and level.hint:
+                elif field == DATConstants.HINT_FIELD and level.hint:
                     writer_2.byte(field)
                     hint_bytes = level.hint.encode("utf-8") + b'\x00'
                     writer_2.byte(len(hint_bytes))
                     writer_2.bytes(hint_bytes)
-                elif field == DATHandler.MOVEMENT_FIELD and len(level.movement) > 0:
+                elif field == DATConstants.MOVEMENT_FIELD and len(level.movement) > 0:
                     writer_2.byte(field)
                     writer_2.byte(2 * len(level.movement))
                     for p in level.movement:
                         writer_2.byte(p % 32)
                         writer_2.byte(p // 32)
-                elif field not in DATHandler.Writer.STANDARD_FIELDS:
+                elif field not in DATConstants.STANDARD_FIELDS:
                     for extra_field, content in level.extra_fields:
                         if field == extra_field:
                             writer_2.byte(field)
@@ -322,5 +283,5 @@ class DATHandler:
                 if c < 65 or c > 90:
                     raise f"password must be all caps, was {input_to_encrypt}"
                 index = c - int.from_bytes(b'A', "big")
-                writer.byte(writer.ENCRYPTED_CHARS[index])
+                writer.byte(DATConstants.ENCRYPTED_CHARS[index])
             return writer.written()
