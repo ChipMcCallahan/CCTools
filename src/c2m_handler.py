@@ -58,5 +58,24 @@ class C2MHandler:
                 section = parser.bytes(4)
             return ParsedC2MLevel(*tuple(parts[f.value] for f in C2MConstants.ParsedField))
 
+        @staticmethod
+        def unpack(packed_bytes):
+            parser = C2MHandler.Parser(packed_bytes)
+            writer = C2MHandler.Writer()
+            uncompressed_length = parser.short()
+            while len(writer.written()) < uncompressed_length:
+                n = parser.byte()
+                if n <= 0x7f:  # Data block
+                    writer.bytes(parser.bytes(n))
+                else:  # Back Reference block
+                    count = n - 0x80
+                    offset = parser.byte()
+                    bytes_to_copy = writer.written()[-offset:]
+                    substring = bytes_to_copy
+                    while len(substring) < count:
+                        substring += bytes_to_copy
+                    writer.bytes(substring[:count])
+            return writer.written()
+
     class Writer(CCBinary.Writer):
         """Writes to C2M format."""
