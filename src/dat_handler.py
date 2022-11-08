@@ -11,7 +11,6 @@ GLIDERBOT_URL = "https://bitbusters.club/gliderbot/sets/cc1/"
 
 class DATHandler:
     """Class for retrieving DAT files from Gliderbot"""
-    # pylint: disable=too-few-public-methods
     TITLE_FIELD = 3
     TRAPS_FIELD = 4
     CLONERS_FIELD = 5
@@ -28,6 +27,11 @@ class DATHandler:
     )
 
     def __init__(self):
+        raise TypeError("Cannot create 'DATHandler' instances.")
+
+    @staticmethod
+    def fetch_set_names_from_gliderbot():
+        """Retrieve a tuple of all available sets on Gliderbot."""
         try:
             # Retrieve the list of all available CC1 sets from Gliderbot.
             soup = BeautifulSoup(
@@ -37,28 +41,17 @@ class DATHandler:
                 "html.parser")
 
             # Ignore the first link, it is a link to parent directory.
-            self.available_sets = [a.text for a in soup.find_all("a")[1:]]
+            return (a.text for a in soup.find_all("a")[1:])
         except Exception as ex:
             raise f"Error retrieving list of sets from Gliderbot: {ex}"
 
-        # Cache results as we retrieve sets to minimize HTTP requests.
-        self.cache = {}
-
-    def fetch(self, levelset):
+    @staticmethod
+    def fetch_set_from_gliderbot(levelset):
         """Retrieve a binary levelset by name from Gliderbot."""
-        if levelset in self.cache:
-            return self.cache[levelset]
-        if levelset not in self.available_sets:
-            raise Exception(f"{levelset} was not found on gliderbot.")
         resp = requests.get(GLIDERBOT_URL + levelset, timeout=10)
-
         if resp.status_code < 300:
-            logging.info(
-                "Successfully retrieved %s.",
-                GLIDERBOT_URL + levelset)
-            self.cache[levelset] = resp.content
+            logging.info("Successfully retrieved %s.", GLIDERBOT_URL + levelset)
             return DATHandler.Parser.parse_set(resp.content)
-
         raise Exception(
             f"Failed to retrieve {GLIDERBOT_URL + levelset}. {resp.status_code}: {resp.reason}")
 
