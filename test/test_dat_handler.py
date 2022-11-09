@@ -9,7 +9,7 @@ class TestParseAndWriteOnOfficialSets(unittest.TestCase):
     """Tests for DAT Handler parsing and rewriting official sets."""
     def test_parse_and_write(self):
         """Test that we can parse DAT files and rewrite them with no changes."""
-        sets_dir = os.path.join(os.getcwd(), "sets")
+        sets_dir = os.path.join(os.getcwd(), "sets/dat/")
         sets = []
         for set_name in os.listdir(sets_dir):
             with open(os.path.join(sets_dir, set_name), "rb") as f:

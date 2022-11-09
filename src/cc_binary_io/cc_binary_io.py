@@ -1,5 +1,6 @@
 """Custom wrappers for working with io.BytesIO objects."""
 import io
+import logging
 import struct
 
 
@@ -56,4 +57,29 @@ class CCBinary:
         def bytes(self, n_bytes, *, convert_to_utf8=False):
             """Read n bytes from IO."""
             result = self.bio.read(n_bytes)
-            return result.decode("utf-8") if convert_to_utf8 else result
+            try:
+                return result.decode("utf-8") if convert_to_utf8 else result
+            except UnicodeError:
+                # e.g. b'\xc5sa Ehinger Berling\x00' in cc2rejects
+                logging.error("error converting %s to utf-8", result)
+                return result
+
+        def size(self):
+            """The total number of bytes in the reader."""
+            return len(self.bio.getvalue())
+
+        def remaining(self):
+            """The number of bytes remaining."""
+            return self.size() - self.current()
+
+        def current(self):
+            """The current index of the reader."""
+            return self.bio.tell()
+
+        def raw(self):
+            """The raw bytes in the reader."""
+            return self.bio.getvalue()
+
+        def seek(self, index):
+            """Set the current index of the reader."""
+            self.bio.seek(index)

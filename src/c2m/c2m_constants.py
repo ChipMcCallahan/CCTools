@@ -5,6 +5,7 @@ from enum import Enum
 
 class C2MConstants:
     """Constants for working with C2M files."""
+
     # pylint: disable=too-few-public-methods
     def __init__(self):
         raise TypeError("Cannot create 'C2MConstants' instances.")
@@ -35,6 +36,11 @@ class C2MConstants:
         READ_ONLY = "read_only"
         FIELDS_IN_ORDER = "fields_in_order"
         GLIDERBOT_URL = "gliderbot_url"
+        CC2H = "cc2h"
+        FILE = "file"
+        TYPE = "type"
+        NAME = "name"
+        SAVE = "save"
 
     END = b"END "
     FILE_VERSION = b"CC2M"
@@ -51,7 +57,8 @@ class C2MConstants:
     REPLAY = b"REPL"
     PACKED_REPLAY = b"PRPL"
     READ_ONLY = b"RDNY"
-    UTF8_FIELDS = frozenset((FILE_VERSION, LOCK, TITLE, AUTHOR, EDITOR_VERSION, CLUE, NOTE))
+    UTF8_FIELDS = frozenset(
+        (FILE_VERSION, LOCK, TITLE, AUTHOR, EDITOR_VERSION, CLUE, NOTE))
     BYTE_FIELDS = frozenset((MAP, PACKED_MAP, KEY, REPLAY, PACKED_REPLAY))
     FIELD_MAP = {
         FILE_VERSION: ParsedField.FILE_VERSION,
@@ -65,7 +72,7 @@ class C2MConstants:
         PACKED_MAP: ParsedField.PACKED_MAP,
         KEY: ParsedField.KEY,
         REPLAY: ParsedField.REPLAY,
-        PACKED_REPLAY: ParsedField.PACKED_REPLAY
+        PACKED_REPLAY: ParsedField.PACKED_REPLAY,
     }
 
 
