@@ -77,7 +77,7 @@ class DATHandler:
         return cls.Parser.parse(dat_bytes)
 
     @staticmethod
-    def fetch_set_names_from_gliderbot():
+    def fetch_set_names():
         """Retrieve a tuple of all available sets on Gliderbot."""
         try:
             # Retrieve the list of all available CC1 sets from Gliderbot.
@@ -93,7 +93,7 @@ class DATHandler:
             raise f"Error retrieving list of sets from Gliderbot: {ex}"
 
     @staticmethod
-    def fetch_set_from_gliderbot(levelset):
+    def fetch_set(levelset):
         """Retrieve a binary levelset by name from Gliderbot."""
         resp = requests.get(GLIDERBOT_URL + levelset, timeout=10)
         if resp.status_code < 300:
