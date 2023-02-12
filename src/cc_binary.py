@@ -1,4 +1,4 @@
-"""Custom wrappers for working with io.BytesIO objects."""
+"""Class for reading and writing CC1 and CC2 levels in binary format."""
 import io
 import logging
 import struct
@@ -6,9 +6,11 @@ import struct
 
 class CCBinary:
     """Custom wrappers for working with io.BytesIO objects."""
+
     # pylint: disable=too-few-public-methods
     class Writer:
         """Custom io.BytesIO wrapper for writing bytes."""
+
         def __init__(self):
             self.bio = io.BytesIO(bytes())
 
@@ -39,6 +41,7 @@ class CCBinary:
 
     class Reader:
         """Custom io.BytesIO wrapper for reading bytes."""
+
         def __init__(self, bytes_to_read):
             self.bio = io.BytesIO(bytes_to_read)
 
