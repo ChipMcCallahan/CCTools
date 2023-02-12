@@ -18,5 +18,5 @@ class TestParseAndWriteOnOfficialSets(unittest.TestCase):
         self.assertLess(0, len(sets))
 
         for s in sets:
-            parsed_and_written_set = DATHandler.Writer.write_set(DATHandler.Parser.parse_set(s))
+            parsed_and_written_set = DATHandler.Writer.write(DATHandler.Parser.parse(s))
             self.assertEqual(s, parsed_and_written_set)

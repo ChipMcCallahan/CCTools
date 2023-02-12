@@ -40,6 +40,7 @@ class TestCC1(unittest.TestCase):
 
     def test_rotations(self):
         """Unit tests for rotating CC1 tiles."""
+        # pylint:disable=invalid-name
         for prefix in (
                 "PLAYER", "BLOB", "WALKER", "TEETH", "GLIDER", "TANK", "BALL", "FIREBALL", "ANT",
                 "FORCE", "CLONE_BLOCK", "PANEL"):

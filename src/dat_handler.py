@@ -65,6 +65,17 @@ class DATHandler:
     def __init__(self):
         raise TypeError("Cannot create 'DATHandler' instances.")
 
+    @classmethod
+    def write(cls, levelset, *, filename=None):
+        """Writes a CC1 levelset in DAT format. Writes to file only if filename is specified.
+        Always returns the written DAT bytes."""
+        return cls.Writer.write(levelset, filename=filename)
+
+    @classmethod
+    def parse(cls, dat_bytes):
+        """Parses raw bytes in DAT format into elements of a CC1 Levelset."""
+        return cls.Parser.parse(dat_bytes)
+
     @staticmethod
     def fetch_set_names_from_gliderbot():
         """Retrieve a tuple of all available sets on Gliderbot."""
@@ -87,7 +98,7 @@ class DATHandler:
         resp = requests.get(GLIDERBOT_URL + levelset, timeout=10)
         if resp.status_code < 300:
             logging.info("Successfully retrieved %s.", GLIDERBOT_URL + levelset)
-            return DATHandler.Parser.parse_set(resp.content)
+            return DATHandler.Parser.parse(resp.content)
         raise Exception(
             f"Failed to retrieve {GLIDERBOT_URL + levelset}. {resp.status_code}: {resp.reason}")
 
@@ -95,7 +106,7 @@ class DATHandler:
         """Class that parses raw bytes in DAT format."""
 
         @staticmethod
-        def parse_set(raw_bytes):
+        def parse(raw_bytes):
             """Parses raw bytes in DAT format into elements of a CC1 Levelset."""
             parser = DATHandler.Parser(raw_bytes)
             magic_number = parser.long()
@@ -193,7 +204,7 @@ class DATHandler:
         """Class that writes raw bytes in DAT format."""
 
         @staticmethod
-        def write_set(levelset, *, filename=None):
+        def write(levelset, *, filename=None):
             """Writes a CC1 levelset in DAT format. Writes to file only if filename is specified.
             Always returns the written DAT bytes."""
             writer = DATHandler.Writer()
