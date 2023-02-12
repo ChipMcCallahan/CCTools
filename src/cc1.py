@@ -118,6 +118,22 @@ class CC1(Enum):
     PLAYER_S = 110
     PLAYER_E = 111
 
+    def right(self):
+        dirs = ("_N", "_E", "_S", "_W")
+        if self.name[-2:] in dirs:
+            index = (dirs.index(self.name[-2:]) + 1) % 4
+            return CC1[self.name[:-2] + dirs[index]]
+        dirs = ("_NW", "_NE", "_SE", "_SW")
+        if self.name[:-3] == "ICE" and self.name[-3:] in dirs:
+            index = (dirs.index(self.name[-3:]) + 1) % 4
+            return CC1[self.name[:-3] + dirs[index]]
+
+    def reverse(self):
+        return self.right().right()
+
+    def left(self):
+        return self.right().right().right()
+
     @classmethod
     def __compass(cls, prefix):
         return {cls[prefix + "_" + d] for d in "NESW"}
