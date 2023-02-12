@@ -9,6 +9,8 @@ class TestCC1(unittest.TestCase):
     def test_sets(self):
         """Tests for CC1 tile code sets."""
         self.assertEqual(len(CC1.all()), 112)
+        self.assertEqual(len(CC1.invalid()), 14)
+        self.assertEqual(len(CC1.valid()), 112 - 14)
         self.assertEqual(len(CC1.ice()), 5)
         self.assertEqual(len(CC1.forces()), 5)
         self.assertEqual(len(CC1.walls()), 4)
