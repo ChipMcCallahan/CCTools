@@ -119,6 +119,7 @@ class CC1(Enum):
     PLAYER_E = 111
 
     def right(self):
+        """Rotate to the right."""
         dirs = ("_N", "_E", "_S", "_W")
         if self.name[-2:] in dirs:
             index = (dirs.index(self.name[-2:]) + 1) % 4
@@ -127,11 +128,14 @@ class CC1(Enum):
         if self.name[:-3] == "ICE" and self.name[-3:] in dirs:
             index = (dirs.index(self.name[-3:]) + 1) % 4
             return CC1[self.name[:-3] + dirs[index]]
+        return self
 
     def reverse(self):
+        """Reverse direction."""
         return self.right().right()
 
     def left(self):
+        """Rotate to the left."""
         return self.right().right().right()
 
     @classmethod

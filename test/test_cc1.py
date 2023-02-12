@@ -71,3 +71,8 @@ class TestCC1(unittest.TestCase):
         self.assertEqual(sw.reverse(), ne)
         self.assertEqual(se.reverse(), nw)
 
+        for t in CC1.valid().difference(CC1.mobs(), CC1.forces(), CC1.ice(), CC1.panels()).union(
+                {CC1.FORCE_RANDOM, CC1.ICE, CC1.PANEL_SE, CC1.BLOCK}):
+            self.assertEqual(t, t.right())
+            self.assertEqual(t, t.left())
+            self.assertEqual(t, t.reverse())
