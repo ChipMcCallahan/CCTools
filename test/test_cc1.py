@@ -1,7 +1,7 @@
 """Tests for CC1."""
 
 import unittest
-from src.cc1 import CC1
+from src.cc1 import CC1, CC1Cell, CC1Level, CC1Levelset
 
 
 class TestCC1(unittest.TestCase):
@@ -77,3 +77,202 @@ class TestCC1(unittest.TestCase):
             self.assertEqual(t, t.right())
             self.assertEqual(t, t.left())
             self.assertEqual(t, t.reverse())
+
+
+class TestCC1Cell(unittest.TestCase):
+    """Tests for CC1Cell."""
+
+    def test_is_valid(self):
+        """Unit tests for CC1 cell validity."""
+        for element in CC1.nonmobs().difference({CC1.FLOOR}):
+            buried = CC1Cell(CC1.FLOOR, element)
+            self.assertFalse(buried.is_valid())
+
+        for element in CC1.invalid():
+            invalid = CC1Cell(element)
+            self.assertFalse(invalid.is_valid())
+
+        for element in CC1.mobs():
+            buried_mob = CC1Cell(CC1.FLOOR, element)
+            self.assertFalse(buried_mob.is_valid())
+
+        for mob in CC1.mobs():
+            for terrain in CC1.nonmobs().difference(CC1.invalid()):
+                self.assertTrue(CC1Cell(mob, terrain).is_valid())
+
+    def test_contains(self):
+        """Unit tests for checking if a cell contains an element."""
+        cell = CC1Cell(CC1.PLAYER_S, CC1.EXIT)
+        self.assertTrue(cell.contains(CC1.PLAYER_S))
+        self.assertTrue(cell.contains(CC1.EXIT))
+        self.assertFalse(cell.contains(CC1.PLAYER_W))
+
+    def test_add(self):
+        """Unit tests for adding elements to cells."""
+        cell = CC1Cell(CC1.WALL)
+        cell.add(CC1.FIRE)
+        self.assertEqual(cell, CC1Cell(CC1.FIRE))
+
+        cell = CC1Cell(CC1.TEETH_S, CC1.GRAVEL)
+        cell.add(CC1.FIRE)
+        self.assertEqual(cell, CC1Cell(CC1.TEETH_S, CC1.FIRE))
+
+        cell = CC1Cell(CC1.TEETH_S, CC1.GRAVEL)
+        cell.add(CC1.PLAYER_S)
+        self.assertEqual(cell, CC1Cell(CC1.PLAYER_S, CC1.GRAVEL))
+
+        cell = CC1Cell(CC1.WALL)
+        cell.add(CC1.BLOCK)
+        self.assertEqual(cell, CC1Cell(CC1.BLOCK, CC1.WALL))
+
+    def test_remove(self):
+        """Unit tests for removing elements from cells."""
+        cell = CC1Cell(CC1.WALL)
+        self.assertFalse(cell.remove(CC1.BLOCK))
+        self.assertEqual(cell, CC1Cell(CC1.WALL))
+
+        cell = CC1Cell(CC1.WALL)
+        self.assertTrue(cell.remove(CC1.WALL))
+        self.assertEqual(cell, CC1Cell())
+
+        cell = CC1Cell(CC1.TEETH_S, CC1.WALL)
+        self.assertTrue(cell.remove(CC1.WALL))
+        self.assertEqual(cell, CC1Cell(CC1.TEETH_S))
+
+        cell = CC1Cell(CC1.TEETH_S, CC1.WALL)
+        self.assertTrue(cell.remove(CC1.TEETH_S))
+        self.assertEqual(cell, CC1Cell(CC1.WALL))
+
+    def test_erase(self):
+        """Unit test for erasing cells."""
+        cell = CC1Cell(CC1.TEETH_S, CC1.WALL)
+        cell.erase()
+        self.assertEqual(cell, CC1Cell())
+
+
+class TestCC1Level(unittest.TestCase):
+    """Tests for CC1Level."""
+
+    def test_is_valid(self):
+        """Unit tests for CC1 Level validity."""
+        level = CC1Level()
+        self.assertTrue(level.is_valid())
+        level.map[0] = CC1Cell(CC1.NOT_USED_0)
+        self.assertFalse(level.is_valid())
+
+    def test_add(self):
+        """Unit tests for adding elements to levels."""
+        level = CC1Level()
+        level.add(22, CC1.WALL)
+        self.assertEqual(level.map[22], CC1Cell(CC1.WALL))
+
+        level.add(22, CC1.GRAVEL)
+        self.assertEqual(level.map[22], CC1Cell(CC1.GRAVEL))
+
+        level.add(22, CC1.BLOB_S)
+        self.assertEqual(level.map[22], CC1Cell(CC1.BLOB_S, CC1.GRAVEL))
+        self.assertEqual(level.movement, [22])
+
+        level.add(22, CC1.WALL)
+        self.assertEqual(level.map[22], CC1Cell(CC1.BLOB_S, CC1.WALL))
+
+        level.add(22, CC1.BALL_S)
+        self.assertEqual(level.map[22], CC1Cell(CC1.BALL_S, CC1.WALL))
+        self.assertEqual(level.movement, [22])
+
+        level.add(22, CC1.BLOCK)
+        self.assertEqual(level.map[22], CC1Cell(CC1.BLOCK, CC1.WALL))
+        self.assertEqual(level.movement, [])
+
+        level.add(22, CC1.BALL_S)
+        self.assertEqual(level.map[22], CC1Cell(CC1.BALL_S, CC1.WALL))
+        self.assertEqual(level.movement, [22])
+
+        level.add(22, CC1.PLAYER_S)
+        self.assertEqual(level.map[22], CC1Cell(CC1.PLAYER_S, CC1.WALL))
+        self.assertEqual(level.movement, [])
+
+        level.add(33, CC1.TRAP_BUTTON)
+        level.add(34, CC1.TRAP_BUTTON)
+        level.add(35, CC1.TRAP_BUTTON)
+        level.add(44, CC1.TRAP)
+        level.traps[33] = 44
+        level.traps[34] = 44
+        level.traps[35] = 44
+        level.add(34, CC1.GRAVEL)
+        self.assertEqual(level.traps, {33: 44, 35: 44})
+        level.add(44, CC1.GRAVEL)
+        self.assertEqual(len(level.traps), 0)
+
+        level.add(33, CC1.CLONE_BUTTON)
+        level.add(34, CC1.CLONE_BUTTON)
+        level.add(35, CC1.CLONE_BUTTON)
+        level.add(44, CC1.CLONER)
+        level.cloners[33] = 44
+        level.cloners[34] = 44
+        level.cloners[35] = 44
+        level.add(34, CC1.GRAVEL)
+        self.assertEqual(level.cloners, {33: 44, 35: 44})
+        level.add(44, CC1.GRAVEL)
+        self.assertEqual(len(level.cloners), 0)
+
+    def test_remove(self):
+        """Unit tests for removing elements from levels."""
+        level = CC1Level()
+        level.add(22, CC1.BLOB_S)
+        self.assertEqual(level.movement, [22])
+        level.remove(22, CC1.BLOB_S)
+        self.assertEqual(level.map[22], CC1Cell())
+        self.assertEqual(level.movement, [])
+
+        level.add(22, CC1.BLOB_S)
+        level.add(22, CC1.GRAVEL)
+        level.remove(22, CC1.BLOB_S)
+        self.assertEqual(level.map[22], CC1Cell(CC1.GRAVEL))
+
+        level.add(33, CC1.TRAP_BUTTON)
+        level.add(34, CC1.TRAP_BUTTON)
+        level.add(35, CC1.TRAP_BUTTON)
+        level.add(44, CC1.TRAP)
+        level.traps[33] = 44
+        level.traps[34] = 44
+        level.traps[35] = 44
+        level.remove(34, CC1.TRAP_BUTTON)
+        self.assertEqual(level.traps, {33: 44, 35: 44})
+        level.remove(44, CC1.TRAP)
+        self.assertEqual(len(level.traps), 0)
+
+        level.add(33, CC1.CLONE_BUTTON)
+        level.add(34, CC1.CLONE_BUTTON)
+        level.add(35, CC1.CLONE_BUTTON)
+        level.add(44, CC1.CLONER)
+        level.cloners[33] = 44
+        level.cloners[34] = 44
+        level.cloners[35] = 44
+        level.remove(34, CC1.CLONE_BUTTON)
+        self.assertEqual(level.cloners, {33: 44, 35: 44})
+        level.remove(44, CC1.CLONER)
+        self.assertEqual(len(level.cloners), 0)
+
+    def test_count_chips(self):
+        """Unit test for counting chips in a level."""
+        level = CC1Level()
+        for i in range(10):
+            level.add(i, CC1.CHIP)
+        self.assertEqual(level.count_chips(), 10)
+
+    def test_serialize(self):
+        """Unit test for serializing a level."""
+        level = CC1Level()
+        # make sure no errors and returns something
+        self.assertIsNotNone(level.serialize())
+
+
+class TestCC1Levelset(unittest.TestCase):
+    """Tests for CC1Levelset."""
+
+    def test_serialize(self):
+        """Unit test for serializing a levelset."""
+        levelset = CC1Levelset()
+        # make sure no errors and returns something
+        self.assertIsNotNone(levelset.serialize())

@@ -98,7 +98,7 @@ class DATHandler:
         resp = requests.get(GLIDERBOT_URL + levelset, timeout=10)
         if resp.status_code < 300:
             logging.info("Successfully retrieved %s.", GLIDERBOT_URL + levelset)
-            return DATHandler.Parser.parse(resp.content)
+            return DATHandler.parse(resp.content)
         raise Exception(
             f"Failed to retrieve {GLIDERBOT_URL + levelset}. {resp.status_code}: {resp.reason}")
 

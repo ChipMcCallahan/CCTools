@@ -1,5 +1,8 @@
 """Enumeration of tile codes used in CC1 DAT files, and associated utils."""
+import copy
 from enum import Enum
+
+from .dat_handler import ParsedDATLevel, ParsedDATLevelset
 
 
 class CC1(Enum):
@@ -291,3 +294,161 @@ class CC1(Enum):
     def toggles(cls):
         """The set of all CC1 toggle tiles."""
         return {cls.TOGGLE_WALL, cls.TOGGLE_FLOOR}
+
+
+class CC1Cell:
+    """Class that represents a single CC1 cell with a top and bottom element."""
+    def __init__(self, top=CC1.FLOOR, bottom=CC1.FLOOR):
+        self.top, self.bottom = top, bottom
+
+    def __copy__(self):
+        return CC1Cell(self.top, self.bottom)
+
+    def __eq__(self, other):
+        return (self.top, self.bottom) == (other.top, other.bottom)
+
+    def is_valid(self):
+        """Check if this cell is invalid due to illegal buried tiles or invalid codes."""
+        buried = (self.top not in CC1.mobs() and self.bottom != CC1.FLOOR)
+        invalid_code = len({self.top, self.bottom}.intersection(CC1.invalid())) > 0
+        buried_mob = self.bottom in CC1.mobs()
+        return not (buried or invalid_code or buried_mob)
+
+    def contains(self, elem):
+        """Returns true if elem is present in cell.top or cell.bottom."""
+        return elem in {self.top, self.bottom}
+
+    def add(self, elem):
+        """Intelligently add a CC1 tile here, maintaining validity."""
+        is_mob = elem in CC1.mobs()
+        mob_here = self.top in CC1.mobs()
+        if is_mob:
+            # If adding mob to terrain, move the terrain to the bottom layer.
+            if not mob_here:
+                self.bottom = self.top
+            self.top = elem
+        else:
+            if mob_here:
+                # If adding terrain where a mob exists, replace the terrain but not the mob.
+                self.bottom = elem
+            else:
+                self.top = elem
+
+    def remove(self, elem):
+        """Intelligently remove a CC1 tile here, maintaining validity. Returns True if cell was
+        altered, False if not."""
+        if elem == CC1.FLOOR:
+            # Floor is default. It can never be removed.
+            return False
+        if elem == self.top:
+            self.top = self.bottom
+            self.bottom = CC1.FLOOR
+            return True
+        if elem == self.bottom:
+            self.bottom = CC1.FLOOR
+            return True
+        return False
+
+    def erase(self):
+        """Clear cell by setting top and bottom layers to floor."""
+        self.top = CC1.FLOOR
+        self.bottom = CC1.FLOOR
+
+
+class CC1Level:
+    """Class that represents a CC1 level."""
+    # pylint: disable=too-many-instance-attributes
+    def __init__(self, parsed=None):
+        self.title = parsed.title if parsed else "Untitled"
+        self.time = parsed.time if parsed else 0
+        self.chips = parsed.chips if parsed else 0
+        self.hint = parsed.hint if parsed else ""
+        self.password = parsed.password if parsed else ""
+        self.map = []
+        for i in range(32 * 32):
+            cell = CC1Cell()
+            if parsed:
+                cell.top, cell.bottom = (CC1(integer) for integer in parsed.map[i])
+            self.map.append(cell)
+        self.traps = {t[0]: t[1] for t in parsed.trap_controls} if parsed else {}
+        self.cloners = {t[0]: t[1] for t in parsed.clone_controls} if parsed else {}
+        self.movement = list(parsed.movement) if parsed else []
+
+    def is_valid(self):
+        """Returns whether this level map is valid by CC1 rules."""
+        return False not in {cell.is_valid() for cell in self.map}
+
+    def add(self, pos, elem):
+        """Add an element at a position, maintaining validity, traps, cloners, and movement."""
+        cell = self.map[pos]
+        old_cell = copy.copy(cell)
+        was_monster = cell.top in CC1.monsters()
+        cell.add(elem)
+        is_monster = cell.top in CC1.monsters()
+
+        # Keep monster movement order in sync.
+        if was_monster and not is_monster:
+            self.movement.remove(pos)
+        # DAT files can only support 127 movement entries.
+        # See https://wiki.bitbusters.club/Monster
+        if is_monster and not was_monster and len(self.movement) < 127:
+            self.movement.append(pos)
+
+        # Remove trap and cloner connections if they were deleted.
+        # Note: If adding traps and cloners, they will NOT be connected here.
+        for code in (CC1.TRAP, CC1.TRAP_BUTTON, CC1.CLONER, CC1.CLONE_BUTTON):
+            was_removed = old_cell.contains(code) and not cell.contains(code)
+            if was_removed:
+                self.__update_controls(pos, code)
+
+    def remove(self, pos, elem):
+        """Remove an element at a position, maintaining validity, traps, cloners, and movement."""
+        removed = self.map[pos].remove(elem)
+        if removed:
+            if elem in CC1.monsters() and pos in self.movement:
+                self.movement.remove(pos)
+            self.__update_controls(pos, elem)
+
+    def count_chips(self):
+        """Counts all the chips in the level."""
+        count = 0
+        for p in range(32 * 32):
+            if self.map[p].contains(CC1.CHIP):
+                count += 1
+        return count
+
+    def serialize(self):
+        """Serialize to primitive form for writing."""
+        title, number, time = self.title, 0, self.time
+        chips, hint, password = self.chips, self.hint, self.password
+        _map = ((cell.top.value, cell.bottom.value) for cell in self.map)
+        trap_controls = ((k, v) for k, v in self.traps.items())
+        clone_controls = ((k, v) for k, v in self.cloners.items())
+        movement = self.movement
+        return ParsedDATLevel(title, number, time, chips, hint, password, _map, trap_controls,
+                              clone_controls, movement, None, None, None)
+
+    def __update_controls(self, pos, elem):
+        if elem == CC1.TRAP:
+            for k, v in tuple(self.traps.items()):
+                if v == pos:
+                    self.traps.pop(k, None)
+        elif elem == CC1.TRAP_BUTTON:
+            self.traps.pop(pos, None)
+        elif elem == CC1.CLONER:
+            for k, v in tuple(self.cloners.items()):
+                if v == pos:
+                    self.cloners.pop(k, None)
+        elif elem == CC1.CLONE_BUTTON:
+            self.cloners.pop(pos, None)
+
+
+class CC1Levelset:
+    """Class that represents a CC1 Levelset."""
+    # pylint: disable=too-few-public-methods
+    def __init__(self, parsed=None):
+        self.levels = [CC1Level(level) for level in parsed.levels] if parsed else []
+
+    def serialize(self):
+        """Serialize to primitive form for writing."""
+        return ParsedDATLevelset([level.serialize() for level in self.levels], None)
