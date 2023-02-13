@@ -421,9 +421,9 @@ class CC1Level:
         """Serialize to primitive form for writing."""
         title, number, time = self.title, 0, self.time
         chips, hint, password = self.chips, self.hint, self.password
-        _map = ((cell.top.value, cell.bottom.value) for cell in self.map)
-        trap_controls = ((k, v) for k, v in self.traps.items())
-        clone_controls = ((k, v) for k, v in self.cloners.items())
+        _map = tuple((cell.top.value, cell.bottom.value) for cell in self.map)
+        trap_controls = tuple((k, v) for k, v in self.traps.items())
+        clone_controls = tuple((k, v) for k, v in self.cloners.items())
         movement = self.movement
         return ParsedDATLevel(title, number, time, chips, hint, password, _map, trap_controls,
                               clone_controls, movement, None, None, None)
