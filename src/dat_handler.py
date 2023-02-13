@@ -298,9 +298,6 @@ class DATHandler:
                             writer_2.byte(len(content))
                             writer_2.bytes(content)
                             break
-                else:
-                    logging.warning("Field %s existed in level %s, but nothing was written. ",
-                                    field, level)
 
             remaining_bytes = writer_2.written()
             writer_1.short(len(remaining_bytes))
