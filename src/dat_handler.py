@@ -210,10 +210,12 @@ class DATHandler:
             writer = DATHandler.Writer()
             writer.long(levelset.magic_number or 0x0002AAAC)
             writer.short(len(levelset.levels))
+            number = 1
             for level in levelset.levels:
-                level_bytes = DATHandler.Writer.write_level(level)
+                level_bytes = DATHandler.Writer.write_level(level, number)
                 writer.short(len(level_bytes))
                 writer.bytes(level_bytes)
+                number += 1
             dat_bytes = writer.written()
             if filename:
                 with open(filename, "wb") as file_obj:
@@ -222,11 +224,11 @@ class DATHandler:
             return dat_bytes
 
         @staticmethod
-        def write_level(level):
+        def write_level(level, number=0):
             """Writes a CC1 level in DAT format and returns written DAT bytes. """
             # pylint: disable=too-many-locals, too-many-branches, too-many-statements
             writer_1 = DATHandler.Writer()
-            writer_1.short(level.number)
+            writer_1.short(level.number or number)
             writer_1.short(level.time)
             writer_1.short(level.chips)
             writer_1.short(level.map_detail)
