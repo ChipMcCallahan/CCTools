@@ -5,6 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from .cc_binary import CCBinary
+from .cc1 import CC1Levelset, CC1Level
 
 GLIDERBOT_URL = "https://bitbusters.club/gliderbot/sets/cc1/"
 
@@ -204,9 +205,11 @@ class DATHandler:
         """Class that writes raw bytes in DAT format."""
 
         @staticmethod
-        def write(levelset, *, filename=None):
+        def write(levelset_to_write, *, filename=None):
             """Writes a CC1 levelset in DAT format. Writes to file only if filename is specified.
             Always returns the written DAT bytes."""
+            levelset = DATHandler.Writer.serialize(levelset_to_write) \
+                if isinstance(levelset_to_write, CC1Levelset) else levelset_to_write
             writer = DATHandler.Writer()
             writer.long(levelset.magic_number or 0x0002AAAC)
             writer.short(len(levelset.levels))
@@ -224,9 +227,11 @@ class DATHandler:
             return dat_bytes
 
         @staticmethod
-        def write_level(level, number=0):
+        def write_level(level_to_write, number=0):
             """Writes a CC1 level in DAT format and returns written DAT bytes. """
             # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+            level = DATHandler.Writer.serialize(level_to_write) \
+                if isinstance(level_to_write, CC1Level) else level_to_write
             writer_1 = DATHandler.Writer()
             writer_1.short(level.number or number)
             writer_1.short(level.time or 0)
@@ -345,3 +350,24 @@ class DATHandler:
                 index = c - int.from_bytes(b'A', "big")
                 writer.byte(DATConstants.ENCRYPTED_CHARS[index])
             return writer.written()
+
+        @staticmethod
+        def serialize(level_or_levelset):
+            """Serialize CC1Level{set} to ParsedDATLevel{set}"""
+            if isinstance(level_or_levelset, CC1Level):
+                level = level_or_levelset
+                title, number, time = level.title, 0, level.time
+                chips, hint, password = level.chips, level.hint, level.password
+                _map = tuple((cell.top.value, cell.bottom.value) for cell in level.map)
+                trap_controls = tuple((k, v) for k, v in level.traps.items())
+                clone_controls = tuple((k, v) for k, v in level.cloners.items())
+                movement = level.movement
+                return ParsedDATLevel(title, number, time, chips, hint, password, _map,
+                                      trap_controls,
+                                      clone_controls, movement, None, None, None)
+            if isinstance(level_or_levelset, CC1Levelset):
+                levelset = level_or_levelset
+                return ParsedDATLevelset([DATHandler.Writer.serialize(lvl)
+                                          for lvl in levelset.levels], None)
+            raise TypeError(f"Tried to serialize {level_or_levelset} but was not CC1Level or "
+                            f"CC1Levelset.")

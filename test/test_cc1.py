@@ -1,7 +1,7 @@
 """Tests for CC1."""
 
 import unittest
-from src.cc1 import CC1, CC1Cell, CC1Level, CC1Levelset
+from src.cc1 import CC1, CC1Cell, CC1Level
 
 
 class TestCC1(unittest.TestCase):
@@ -268,19 +268,3 @@ class TestCC1Level(unittest.TestCase):
         self.assertEqual(level.count(CC1.CHIP), 10)
         self.assertEqual(level.count(CC1.tanks()), 40)
         self.assertEqual(level.count(CC1.blobs()), 0)
-
-    def test_serialize(self):
-        """Unit test for serializing a level."""
-        level = CC1Level()
-        # make sure no errors and returns something
-        self.assertIsNotNone(level.serialize())
-
-
-class TestCC1Levelset(unittest.TestCase):
-    """Tests for CC1Levelset."""
-
-    def test_serialize(self):
-        """Unit test for serializing a levelset."""
-        levelset = CC1Levelset()
-        # make sure no errors and returns something
-        self.assertIsNotNone(levelset.serialize())

@@ -2,8 +2,6 @@
 import copy
 from enum import Enum
 
-from .dat_handler import ParsedDATLevel, ParsedDATLevelset
-
 
 class CC1(Enum):
     """Enumeration of tile codes used in CC1 DAT files, and associated utils."""
@@ -419,17 +417,6 @@ class CC1Level:
             count += len(elem_set.intersection({self.map[p].top, self.map[p].bottom}))
         return count
 
-    def serialize(self):
-        """Serialize to primitive form for writing."""
-        title, number, time = self.title, 0, self.time
-        chips, hint, password = self.chips, self.hint, self.password
-        _map = tuple((cell.top.value, cell.bottom.value) for cell in self.map)
-        trap_controls = tuple((k, v) for k, v in self.traps.items())
-        clone_controls = tuple((k, v) for k, v in self.cloners.items())
-        movement = self.movement
-        return ParsedDATLevel(title, number, time, chips, hint, password, _map, trap_controls,
-                              clone_controls, movement, None, None, None)
-
     def __update_controls(self, pos, elem):
         if elem == CC1.TRAP:
             for k, v in tuple(self.traps.items()):
@@ -450,7 +437,3 @@ class CC1Levelset:
     # pylint: disable=too-few-public-methods
     def __init__(self, parsed=None):
         self.levels = [CC1Level(level) for level in parsed.levels] if parsed else []
-
-    def serialize(self):
-        """Serialize to primitive form for writing."""
-        return ParsedDATLevelset([level.serialize() for level in self.levels], None)
