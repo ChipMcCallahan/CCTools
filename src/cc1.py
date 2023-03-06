@@ -412,6 +412,8 @@ class CC1Level:
     def count(self, elem):
         """Counts all the occurrences of an element or set of elements in the level."""
         elem_set = {elem, } if isinstance(elem, CC1) else set(iter(elem))
+        for e in elem_set:
+            assert isinstance(e, CC1)
         count = 0
         for p in range(32 * 32):
             count += len(elem_set.intersection({self.map[p].top, self.map[p].bottom}))
