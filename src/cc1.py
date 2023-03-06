@@ -409,12 +409,12 @@ class CC1Level:
                 self.movement.remove(pos)
             self.__update_controls(pos, elem)
 
-    def count_chips(self):
-        """Counts all the chips in the level."""
+    def count(self, elem):
+        """Counts all the occurrences of an element or set of elements in the level."""
+        elem_set = {elem, } if isinstance(elem, CC1) else set(iter(elem))
         count = 0
         for p in range(32 * 32):
-            if self.map[p].contains(CC1.CHIP):
-                count += 1
+            count += len(elem_set.intersection({self.map[p].top, self.map[p].bottom}))
         return count
 
     def serialize(self):

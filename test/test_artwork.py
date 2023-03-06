@@ -206,5 +206,5 @@ class Test8x8ArtworkPresent(unittest.TestCase):
         }
         actual = set(os.listdir(os.path.join(os.getcwd(), "art/8x8/")))
         for missing in expected.difference(actual):
-            logging.error(f"missing {missing}")
+            logging.error("missing %s", missing)
         self.assertEqual(expected, actual)

@@ -254,12 +254,20 @@ class TestCC1Level(unittest.TestCase):
         level.remove(44, CC1.CLONER)
         self.assertEqual(len(level.cloners), 0)
 
-    def test_count_chips(self):
-        """Unit test for counting chips in a level."""
+    def test_count(self):
+        """Unit test for counting elements in a level."""
         level = CC1Level()
-        for i in range(10):
+        n = 10
+        for i in range(n):
             level.add(i, CC1.CHIP)
-        self.assertEqual(level.count_chips(), 10)
+            level.add(i, CC1.TANK_N)
+            level.add(i + n, CC1.TANK_E)
+            level.add(i + 2 * n, CC1.TANK_S)
+            level.add(i + 3 * n, CC1.TANK_W)
+
+        self.assertEqual(level.count(CC1.CHIP), 10)
+        self.assertEqual(level.count(CC1.tanks()), 40)
+        self.assertEqual(level.count(CC1.blobs()), 0)
 
     def test_serialize(self):
         """Unit test for serializing a level."""
