@@ -372,6 +372,11 @@ class CC1Level:
         self.cloners = {t[0]: t[1] for t in parsed.clone_controls} if parsed else {}
         self.movement = list(parsed.movement) if parsed else []
 
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
     def is_valid(self):
         """Returns whether this level map is valid by CC1 rules."""
         return False not in {cell.is_valid() for cell in self.map}
@@ -437,3 +442,36 @@ class CC1Levelset:
     # pylint: disable=too-few-public-methods
     def __init__(self, parsed=None):
         self.levels = [CC1Level(level) for level in parsed.levels] if parsed else []
+
+
+class CC1LevelTransformer:
+    """Class that transforms CC1Levels"""
+    # pylint: disable=too-few-public-methods
+    @staticmethod
+    def __rotate_pos(pos):
+        """Rotates a position on a 32x32 grid 90 degrees to the right."""
+        x, y = pos % 32, pos // 32
+        nx, ny = 31 - y, x
+        return ny * 32 + nx
+
+    @staticmethod
+    def rotate(level):
+        """Rotate a CC1Level to the right by 90 degrees, if it does not contain SE panel."""
+        if level.count(CC1.PANEL_SE) > 0:
+            return level
+        new_level = copy.deepcopy(level)
+        for p in range(32 * 32):
+            new_p = CC1LevelTransformer.__rotate_pos(p)
+            cell = level.map[p]
+            new_level.map[new_p] = CC1Cell(cell.top.right(), cell.bottom.right())
+        new_level.traps, new_level.cloners = {}, {}
+        new_level.movement = []
+        for k, v in level.traps.items():
+            nk, nv = (CC1LevelTransformer.__rotate_pos(p) for p in (k, v))
+            new_level.traps[nk] = nv
+        for k, v in level.cloners.items():
+            nk, nv = (CC1LevelTransformer.__rotate_pos(p) for p in (k, v))
+            new_level.cloners[nk] = nv
+        for p in level.movement:
+            new_level.movement.append(CC1LevelTransformer.__rotate_pos(p))
+        return new_level

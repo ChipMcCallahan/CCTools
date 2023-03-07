@@ -1,7 +1,9 @@
 """Tests for CC1."""
 
+import os
 import unittest
-from src.cc1 import CC1, CC1Cell, CC1Level
+from src.cc1 import CC1, CC1Cell, CC1Level, CC1Levelset, CC1LevelTransformer
+from src.dat_handler import DATHandler
 
 
 class TestCC1(unittest.TestCase):
@@ -268,3 +270,24 @@ class TestCC1Level(unittest.TestCase):
         self.assertEqual(level.count(CC1.CHIP), 10)
         self.assertEqual(level.count(CC1.tanks()), 40)
         self.assertEqual(level.count(CC1.blobs()), 0)
+
+
+class TestCC1LevelTransformer(unittest.TestCase):
+    """Tests for CC1LevelTransformer."""
+
+    def test_rotate(self):
+        """Unit test for rotating a CC1Level."""
+        with open(os.path.join(os.getcwd(), "sets/dat/CCLP1.dat"), "rb") as f:
+            cclp1 = CC1Levelset(DATHandler.parse(f.read()))
+
+        for level in cclp1.levels:
+            if level.count(CC1.PANEL_SE) > 0:
+                self.assertEqual(level, CC1LevelTransformer.rotate(level))
+            else:
+                # Should not be equal after 90-degree rotation
+                rotated = CC1LevelTransformer.rotate(level)
+                self.assertNotEqual(level, rotated)
+                # Should be equal again after 360 degrees
+                for _ in range(3):
+                    rotated = CC1LevelTransformer.rotate(rotated)
+                self.assertEqual(level, rotated)
