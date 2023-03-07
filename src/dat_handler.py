@@ -96,7 +96,7 @@ class DATHandler:
 
     @staticmethod
     def fetch_set(levelset):
-        """Retrieve a binary levelset by name from Gliderbot."""
+        """Retrieve a DAT levelset by name from Gliderbot and convert to CC1Levelset."""
         resp = requests.get(GLIDERBOT_URL + levelset, timeout=10)
         if resp.status_code < 300:
             logging.info("Successfully retrieved %s.", GLIDERBOT_URL + levelset)
