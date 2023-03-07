@@ -413,7 +413,8 @@ class CC1Level:
             self.__update_controls(pos, elem)
 
     def count(self, elem):
-        """Counts all the occurrences of an element or set of elements in the level."""
+        """Counts all the occurrences of an element or set of elements in the level. Note: If two
+        elements are stacked, only counts one of them. """
         elem_set = {elem, } if isinstance(elem, CC1) else set(iter(elem))
         for e in elem_set:
             assert isinstance(e, CC1)
@@ -457,9 +458,9 @@ class CC1LevelTransformer:
     @staticmethod
     def rotate(level):
         """Rotate a CC1Level to the right by 90 degrees, if it does not contain SE panel."""
-        if level.count(CC1.PANEL_SE) > 0:
-            return level
         new_level = copy.deepcopy(level)
+        if level.count(CC1.PANEL_SE) > 0:
+            return new_level
         for p in range(32 * 32):
             new_p = CC1LevelTransformer.__rotate_pos(p)
             cell = level.map[p]
@@ -475,3 +476,45 @@ class CC1LevelTransformer:
         for p in level.movement:
             new_level.movement.append(CC1LevelTransformer.__rotate_pos(p))
         return new_level
+
+    @staticmethod
+    def replace(level, old, new):
+        """Replace all CC1 elements in old with element new. Old may be CC1 element or iterable.
+        New must be CC1 element. """
+        level = copy.deepcopy(level)  # Do not modify original.
+        assert isinstance(new, CC1), f"Expected CC1 element, got {new}."
+        if isinstance(old, CC1):
+            old = {old, }
+        old = set(old)
+        for p in range(32 * 32):
+            here = level.map[p]
+            for elem in old:
+                if here.remove(elem):
+                    here.add(new)
+                elif elem is CC1.FLOOR:  # Since FLOOR is default, it never gets removed.
+                    if here.top is CC1.FLOOR or here.top in CC1.mobs() and here.bottom is CC1.FLOOR:
+                        here.add(new)
+        return level
+
+    @staticmethod
+    def replace_mobs(level, old, new):
+        """Replace all mobs in old with those in new, maintaining direction."""
+        for d in "NESW":
+            targets = {mob for mob in old if mob.name.endswith(f"_{d}")}
+            replacements = tuple(mob for mob in new if mob.name.endswith(f"_{d}"))
+            assert len(replacements) == 1, f"Expected only one matching mob for direction '{d}', " \
+                                           f"found {replacements} "
+            level = CC1LevelTransformer.replace(level, targets, replacements[0])
+        return level
+
+    @staticmethod
+    def keep(level, elements_to_keep):
+        """Erase everything except for specified elements."""
+        level = copy.deepcopy(level)
+        for p in range(32 * 32):
+            here = level.map[p]
+            present = {here.top, here.bottom}
+            trash = present.difference(elements_to_keep)
+            for item in trash:
+                here.remove(item)
+        return level

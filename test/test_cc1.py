@@ -291,3 +291,102 @@ class TestCC1LevelTransformer(unittest.TestCase):
                 for _ in range(3):
                     rotated = CC1LevelTransformer.rotate(rotated)
                 self.assertEqual(level, rotated)
+
+    def test_replace(self):
+        """Unit test for transforming a CC1Level by element replacement."""
+        level = CC1Level()
+        n = 20
+        for i in range(n):
+            level.add(i, CC1.FIRE)
+            level.add(i, CC1.FIREBALL_N)
+            level.add(i + n, CC1.WATER)
+
+        # Should do nothing, but new level should be deep copy.
+        level2 = CC1LevelTransformer.replace(level, CC1.GRAVEL, CC1.DIRT)
+        self.assertEqual(level, level2)
+        self.assertIsNot(level, level2)
+
+        # Replace all floor with gravel.
+        level3 = CC1LevelTransformer.replace(level2, CC1.FLOOR, CC1.GRAVEL)
+        self.assertEqual(level3.count(CC1.GRAVEL), 1024 - n * 2)
+        self.assertEqual(level3.count(CC1.GRAVEL), 1024 - n * 2)
+
+        # Replace all fire with water.
+        level4 = CC1LevelTransformer.replace(level3, CC1.FIRE, CC1.WATER)
+        self.assertEqual(level4.count(CC1.FIRE), 0)
+        self.assertEqual(level4.count(CC1.WATER), n * 2)
+        self.assertEqual(level4.count(CC1.FIREBALL_N), n)
+
+        # Replace all fireball with blob.
+        level5 = CC1LevelTransformer.replace(level4, CC1.FIREBALL_N, CC1.BLOB_N)
+        self.assertEqual(level5.count(CC1.WATER), n * 2)
+        self.assertEqual(level5.count(CC1.FIREBALL_N), 0)
+        self.assertEqual(level5.count(CC1.BLOB_N), n)
+
+        level6 = CC1LevelTransformer.replace(level5, {CC1.WATER, CC1.GRAVEL, CC1.BLOB_N}, CC1.FLOOR)
+        self.assertEqual(level6.count(CC1.FLOOR), 1024)
+        self.assertEqual(level6.count(CC1.WATER), 0)
+        self.assertEqual(level6.count(CC1.GRAVEL), 0)
+        self.assertEqual(level6.count(CC1.BLOB_N), 0)
+
+    def test_keep(self):
+        """Unit test for transforming a CC1Level by keeping only selected elements."""
+        level = CC1Level()
+
+        # Add one of everything to the level
+        for i, elem in enumerate(CC1):
+            level.add(i, elem)
+
+        elements_to_keep = {CC1.FIRE, CC1.GRAVEL, CC1.DIRT, CC1.WATER}
+        level2 = CC1LevelTransformer.keep(level, elements_to_keep)
+        for elem in elements_to_keep:
+            self.assertEqual(level2.count(elem), 1)
+        for elem in CC1.all().difference(elements_to_keep).difference({CC1.FLOOR, }):
+            self.assertEqual(level2.count(elem), 0)
+
+    def test_replace_mobs(self):
+        """Unit test for transforming a CC1Level by replacing mobs, keeping direction."""
+        level = CC1Level()
+
+        for p in range(20):
+            d = "NESW"[p % 4]
+            mob = CC1[f"TEETH_{d}"]
+            level.add(p, mob)
+        for p in range(20, 40):
+            d = "NESW"[p % 4]
+            mob = CC1[f"BLOB_{d}"]
+            level.add(p, mob)
+        for p in range(40, 60):
+            d = "NESW"[p % 4]
+            mob = CC1[f"PLAYER_{d}"]
+            level.add(p, mob)
+        for p in range(60, 80):
+            d = "NESW"[p % 4]
+            mob = CC1[f"TANK_{d}"]
+            level.add(p, mob)
+        for p in range(80, 100):
+            d = "NESW"[p % 4]
+            mob = CC1[f"BALL_{d}"]
+            level.add(p, mob)
+
+        self.assertEqual(level.count(CC1.teeth()), 20)
+        self.assertEqual(level.count(CC1.blobs()), 20)
+        self.assertEqual(level.count(CC1.players()), 20)
+        self.assertEqual(level.count(CC1.tanks()), 20)
+        self.assertEqual(level.count(CC1.balls()), 20)
+
+        level2 = CC1LevelTransformer.replace_mobs(level, CC1.balls(), CC1.walkers())
+        self.assertEqual(level2.count(CC1.balls()), 0)
+        self.assertEqual(level2.count(CC1.walkers()), 20)
+        for d in "NESW":
+            self.assertEqual(level2.count(CC1[f"WALKER_{d}"]), 5)
+
+        level3 = CC1LevelTransformer.replace_mobs(level, CC1.monsters(), CC1.blocks())
+        self.assertEqual(level3.count(CC1.monsters()), 0)
+        self.assertEqual(level3.count(CC1.blocks()), 80)
+        for d in "NESW":
+            self.assertEqual(level3.count(CC1[f"CLONE_BLOCK_{d}"]), 20)
+        self.assertEqual(level3.count(CC1.players()), 20)
+
+        level4 = CC1LevelTransformer.replace_mobs(level, CC1.mobs(), CC1.teeth())
+        self.assertEqual(level4.count(CC1.teeth()), 100)
