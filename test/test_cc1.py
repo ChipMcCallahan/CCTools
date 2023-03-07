@@ -2,7 +2,7 @@
 
 import os
 import unittest
-from src.cc1 import CC1, CC1Cell, CC1Level, CC1Levelset, CC1LevelTransformer
+from src.cc1 import CC1, CC1Cell, CC1Level, CC1LevelTransformer
 from src.dat_handler import DATHandler
 
 
@@ -278,7 +278,7 @@ class TestCC1LevelTransformer(unittest.TestCase):
     def test_rotate(self):
         """Unit test for rotating a CC1Level."""
         with open(os.path.join(os.getcwd(), "sets/dat/CCLP1.dat"), "rb") as f:
-            cclp1 = CC1Levelset(DATHandler.parse(f.read()))
+            cclp1 = DATHandler.parse(f.read())
 
         for level in cclp1.levels:
             if level.count(CC1.PANEL_SE) > 0:

@@ -73,9 +73,10 @@ class DATHandler:
         return cls.Writer.write(levelset, filename=filename)
 
     @classmethod
-    def parse(cls, dat_bytes):
+    def parse(cls, dat_bytes, *, as_tuple=False):
         """Parses raw bytes in DAT format into elements of a CC1 Levelset."""
-        return cls.Parser.parse(dat_bytes)
+        levelset_tuple = cls.Parser.parse(dat_bytes)
+        return levelset_tuple if as_tuple else CC1Levelset(levelset_tuple)
 
     @staticmethod
     def fetch_set_names():

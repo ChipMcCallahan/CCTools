@@ -19,7 +19,7 @@ class TestParseAndWriteOnOfficialSets(unittest.TestCase):
         self.assertLess(0, len(sets))
 
         for s in sets:
-            parsed_and_written_set = DATHandler.Writer.write(DATHandler.Parser.parse(s))
+            parsed_and_written_set = DATHandler.write(DATHandler.parse(s, as_tuple=True))
             self.assertEqual(s, parsed_and_written_set)
 
     def test_write_cc1level_and_cc1levelset(self):
