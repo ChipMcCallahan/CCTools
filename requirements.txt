@@ -1,7 +1,8 @@
 ###### Requirements without Version Specifiers ######`
 bs4~=0.0.1
-requests~=2.28.1
+requests==2.28.2
 
 ###### Requirements with Version Specifiers ######`
-beautifulsoup4~=4.11.1
-setuptools~=60.2.0
+beautifulsoup4==4.11.2
+setuptools==67.6.0
+Pillow~=9.4.0

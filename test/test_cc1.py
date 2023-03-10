@@ -2,7 +2,7 @@
 
 import os
 import unittest
-from src.cc1 import CC1, CC1Cell, CC1Level, CC1LevelTransformer, CC1LevelImager
+from src.cc1 import CC1, CC1Cell, CC1Level, CC1LevelTransformer
 from src.dat_handler import DATHandler
 
 
@@ -390,10 +390,3 @@ class TestCC1LevelTransformer(unittest.TestCase):
 
         level4 = CC1LevelTransformer.replace_mobs(level, CC1.mobs(), CC1.teeth())
         self.assertEqual(level4.count(CC1.teeth()), 100)
-
-
-class TestCC1LevelImager(unittest.TestCase):
-    """Tests for CC1LevelImager."""
-
-    def test_assert_has_images(self):
-        self.assertTrue(CC1LevelImager.assert_has_images())

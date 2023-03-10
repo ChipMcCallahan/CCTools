@@ -1,8 +1,10 @@
 """Enumeration of tile codes used in CC1 DAT files, and associated utils."""
 import copy
-import os
+import io
 from enum import Enum
-from pathlib import Path
+import requests
+from PIL import Image
+
 
 class CC1(Enum):
     """Enumeration of tile codes used in CC1 DAT files, and associated utils."""
@@ -297,6 +299,7 @@ class CC1(Enum):
 
 class CC1Cell:
     """Class that represents a single CC1 cell with a top and bottom element."""
+
     def __init__(self, top=CC1.FLOOR, bottom=CC1.FLOOR):
         self.top, self.bottom = top, bottom
 
@@ -356,6 +359,7 @@ class CC1Cell:
 
 class CC1Level:
     """Class that represents a CC1 level."""
+
     # pylint: disable=too-many-instance-attributes
     def __init__(self, parsed=None):
         self.title = parsed.title if parsed else "Untitled"
@@ -441,6 +445,7 @@ class CC1Level:
 
 class CC1Levelset:
     """Class that represents a CC1 Levelset."""
+
     # pylint: disable=too-few-public-methods
     def __init__(self, parsed=None):
         self.levels = [CC1Level(level) for level in parsed.levels] if parsed else []
@@ -448,6 +453,7 @@ class CC1Levelset:
 
 class CC1LevelTransformer:
     """Class that transforms CC1Levels"""
+
     # pylint: disable=too-few-public-methods
     @staticmethod
     def __rotate_pos(pos):
@@ -523,14 +529,10 @@ class CC1LevelTransformer:
 
 class CC1LevelImager:
     """Class that creates images of CC1Levels"""
-
+    # pylint: disable=too-few-public-methods
     def __init__(self):
-        raise TypeError("Cannot create 'CC1LevelImager' instances.")
-
-    @staticmethod
-    def assert_has_images():
-        img8_dir = os.path.join(os.getcwd(), "art/8x8/")
-        f_names = [
+        base_path = "https://raw.githubusercontent.com/ChipMcCallahan/CCTools/main/art/8x8/"
+        image_files = [
             "ant_e_8.png",
             "ant_n_8.png",
             "ant_s_8.png",
@@ -613,8 +615,8 @@ class CC1LevelImager:
             "wall_8.png",
             "water_8.png"
         ]
-        for f_name in f_names:
-            path = Path(img8_dir + f_name)
-            assert path.is_file(), f"Error: {path} is not a file."
-
-        return True
+        self.images = {}
+        for image_file in image_files:
+            prefix = image_file.split('.')[0]
+            self.images[prefix] = Image.open(
+                io.BytesIO(requests.get(base_path + image_file, timeout=5).content))
