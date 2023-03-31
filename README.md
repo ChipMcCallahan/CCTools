@@ -118,7 +118,17 @@ print(level.at((5, 0)))
 {CC1Cell top=CC1.TEETH_S bottom=CC1.GRAVEL}
 {CC1Cell top=CC1.GRAVEL bottom=CC1.FLOOR}
 ```
-- `map` and `movement` are lists. 
+- Check if a level is valid with `.is_valid()`.
+```python
+level = CC1Level()
+print(level.is_valid())
+level.add((20, 20), CC1.NOT_USED_0)
+print(level.is_valid())
+```
+```
+True
+False
+```
 - `trap_controls`, and `clone_controls` can all be accessed as proper
 
 ### [CC1Levelset Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L493-L498)
