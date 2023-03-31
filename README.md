@@ -31,6 +31,38 @@ SE
 CC1.ICE_NW
 ```
 #### Element Set Utils
+Easily make comparisons using prebuilt element sets.
+```python
+for e in (CC1.TANK_N, CC1.BLOCK, CC1.PLAYER_N, CC1.NOT_USED_0):
+    print("-" * 20)
+    if e in CC1.tanks():
+        print(f"{e} is a tank.")
+    if e in CC1.blocks():
+        print(f"{e} is a block.")
+    if e in CC1.players():
+        print(f"{e} is a player.")
+    if e in CC1.monsters():
+        print(f"{e} is a monster.")
+    if e in CC1.mobs():
+        print(f"{e} is a mob.")
+    if e in CC1.invalid():
+        print(f"{e} is invalid.")
+```
+```
+--------------------
+CC1.TANK_N is a tank.
+CC1.TANK_N is a monster.
+CC1.TANK_N is a mob.
+--------------------
+CC1.BLOCK is a block.
+CC1.BLOCK is a mob.
+--------------------
+CC1.PLAYER_N is a player.
+CC1.PLAYER_N is a mob.
+--------------------
+CC1.NOT_USED_0 is invalid.
+```
+See [the code](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L196-L344) for a full list of prebuilt element sets.
 
 ### [CC1Level Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L407-L490)
 ```python
