@@ -282,7 +282,7 @@ with open("local_file.c2m", "rb") as f:
 #### C2M Packing and Unpacking
 - Can pack and unpack C2M map data.
 ```python
-unpacked = C2MHandler.Parser.unpack(parsed_level.packed_map)
+unpacked = C2MHandler.Parser.unpack(parsed_tuple.packed_map)
 repacked = C2MHandler.Packer.pack(unpacked)
 ```
 
