@@ -186,6 +186,7 @@ This class obfuscates everything related to reading and writing CC1 DAT file for
 cclp1 = DATHandler.read("CCLP1.dat")
 print(len(cclp1.levels))
 ```
+```
 149
 ```
 - `.write()` returns the DAT binary format of the given CC1Levelset. If an optional `filename` in specified, it writes to disk.
