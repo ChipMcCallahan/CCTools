@@ -240,8 +240,30 @@ replaced = CC1LevelTransformer.keep(level, CC1.walls().union(CC1.panels()))
 ```
 
 #### Rotations
+- Rotations rotate a CC1Level by 90, 180, or 270 degrees, if possible.
+    - If a level contains a CC1.PANEL_SE tile, an identical copy of the level will be returned (with nothing rotated).
+    - Directions of CC1 elements are intelligently swapped. 
+    - Trap and cloner connections are maintained, along with monster movement.
+Examples:
+```python
+r90 = CC1LevelTransformer.rotate_90(level)
+r180 = CC1LevelTransformer.rotate_180(level)
+r270 = CC1LevelTransformer.rotate_270(level)
+```
 
 #### Flips
+- Flips flip a CC1Level horizontally, vertically, or along either diagonal, if possible.
+    - If a level contains a CC1.PANEL_SE tile, an identical copy of the level will be returned (with nothing flipped).
+    - Directions of CC1 elements are intelligently swapped.  
+    - Trap and cloner connections are maintained, along with monster movement.
+Examples:
+```python
+horiz = CC1LevelTransformer.flip_horizontal(level)
+vert = CC1LevelTransformer.flip_vertical(level)
+diag1 = CC1LevelTransformer.flip_ne_sw(level)
+diag2 = CC1LevelTransformer.flip_nw_se(level)
+```
+
 
 ### [C2MHandler Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/c2m_handler.py#L95-L279) (Limited Functionality)
 ```python
