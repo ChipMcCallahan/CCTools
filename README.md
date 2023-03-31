@@ -92,6 +92,35 @@ print(cell)
 from cc_tools import CC1Level
 ```
 
+- `title`, `chips`, `time`, `password`, and `hint` are all simple properties.
+```python
+level = CC1Level()
+level.title = "Old Frog 2"
+level.chips = 30
+level.time = 300
+level.password = "ABCD"
+level.hint = "Remember TMET."
+```
+- Get or edit map elements with `.at()`, `.add()`, and `.remove()`.
+  - Added monsters get appended to `movement`. Deleted monsters get removed from `movement`.
+  - If a connected trap/cloner/button is removed, it will get removed from `traps` or `cloners`.
+  - If a trap/cloner/button is added, it will not be connected. Use `.connect()` to manually connect traps and cloners.
+```python
+level.add((5, 0), CC1.TEETH_S)
+print(level.at((5, 0)))
+level.add((5, 0), CC1.GRAVEL)
+print(level.at((5, 0)))
+level.remove((5, 0), CC1.TEETH_S)
+print(level.at((5, 0)))
+```
+```
+{CC1Cell top=CC1.TEETH_S bottom=CC1.FLOOR}
+{CC1Cell top=CC1.TEETH_S bottom=CC1.GRAVEL}
+{CC1Cell top=CC1.GRAVEL bottom=CC1.FLOOR}
+```
+- `map` and `movement` are lists. 
+- `trap_controls`, and `clone_controls` can all be accessed as proper
+
 ### [CC1Levelset Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L493-L498)
 ```python
 from cc_tools import CC1Levelset
