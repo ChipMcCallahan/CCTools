@@ -203,7 +203,7 @@ print(len(sets))
 ```
 543
 ```
-- `.fetch()` fetches a DAT file from [Gliderbot](https://bitbusters.club/gliderbot/sets/cc1/) and converts it to a CC1Levelset. **Note that currently the filename must exactly match, i.e. "CCLP1.dat" will work but "CCLP1.DAT" will not.**
+- `.fetch_set()` fetches a DAT file from [Gliderbot](https://bitbusters.club/gliderbot/sets/cc1/) and converts it to a CC1Levelset. **Note that currently the filename must exactly match, i.e. "CCLP1.dat" will work but "CCLP1.DAT" will not.**
 ```python
 cclp1 = DATHandler.fetch_set("CCLP1.dat")
 print(cclp1)
