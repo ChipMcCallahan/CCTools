@@ -786,9 +786,9 @@ class CC1LevelImager:
         self.images["green_button_8"] = colorize(self.images["button_8"], "green")
         self.images["tank_button_8"] = colorize(self.images["button_8"], "blue")
         force = self.images["force_s_8"]
-        self.images["force_e_8"] = force.rotate_right(90)
-        self.images["force_n_8"] = force.rotate_right(180)
-        self.images["force_w_8"] = force.rotate_right(270)
+        self.images["force_e_8"] = force.rotate(90)
+        self.images["force_n_8"] = force.rotate(180)
+        self.images["force_w_8"] = force.rotate(270)
         for d in "nesw":
             self.images[f"clone_block_{d}_8"] = self.images["block_8"]
         floor = self.images["floor_8"].copy()
