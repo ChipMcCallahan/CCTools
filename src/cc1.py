@@ -435,6 +435,25 @@ class CC1Level:
     def __str__(self):
         return f"{{CC1Level title='{self.title}'}}"
 
+    def at(self, pos):
+        """Returns the CC1Cell at the given {pos}."""
+        pos = self.__normalize_position(pos)  # If position in (x, y) format convert to y * 32 + x.
+        return self.map[pos]
+
+    def connect(self, pos1, pos2):
+        """Connect a trap/clone button with its target."""
+        pos1, pos2 = self.__normalize_position(pos1), self.__normalize_position(pos2)
+        e1, e2 = self.at(pos1), self.at(pos2)
+        if {e1, e2} == {CC1.TRAP_BUTTON, CC1.TRAP}:
+            source, dest = (pos2, pos1) if e1 == CC1.TRAP else (pos1, pos2)
+            self.traps[source] = dest
+            return True
+        if {e1, e2} == {CC1.CLONE_BUTTON, CC1.CLONER}:
+            source, dest = (pos2, pos1) if e1 == CC1.CLONER else (pos1, pos2)
+            self.cloners[source] = dest
+            return True
+        return False
+
     def is_valid(self):
         """Returns whether this level map is valid by CC1 rules."""
         return False not in {cell.is_valid() for cell in self.map}
