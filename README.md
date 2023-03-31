@@ -179,6 +179,37 @@ print(len(lset.levels))
 ```python
 from cc_tools import DATHandler
 ```
+This class obfuscates everything related to reading and writing CC1 DAT file formats. It can also fetch sets and set names from the Gliderbot repository.
+#### Reading and Writing
+- `.read()` reads a DAT levelset from the local filesystem and returns a CC1Levelset.
+```python
+cclp1 = DATHandler.read("CCLP1.dat")
+print(len(cclp1.levels))
+```
+149
+```
+- `.write()` returns the DAT binary format of the given CC1Levelset. If an optional `filename` in specified, it writes to disk.
+```python
+levelset_binary = DATHandler.write(cc1_levelset)
+DATHandler.write(cc1_levelset, filename="local_file.dat")
+```
+#### Fetching from Gliderbot
+- `.fetch_set_names()` returns a list of all available CC1 sets on [Gliderbot](https://bitbusters.club/gliderbot/sets/cc1/)
+```python
+sets = DATHandler.fetch_set_names()
+print(len(sets))
+```
+```
+543
+```
+- `.fetch()` fetches a DAT file from [Gliderbot](https://bitbusters.club/gliderbot/sets/cc1/) and converts it to a CC1Levelset. **Note that currently the filename must exactly match, i.e. "CCLP1.dat" will work but "CCLP1.DAT" will not.**
+```python
+cclp1 = DATHandler.fetch_set("CCLP1.dat")
+print(cclp1)
+```
+```
+{CC1Levelset, 149 levels}
+```
 
 ### [CC1LevelTransformer Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L501-L641)
 ```python
