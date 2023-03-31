@@ -179,15 +179,111 @@ print(len(lset.levels))
 ```python
 from cc_tools import DATHandler
 ```
+This class obfuscates everything related to reading and writing CC1 DAT file formats. It can also fetch sets and set names from the Gliderbot repository.
+#### Reading and Writing
+- `.read()` reads a DAT levelset from the local filesystem and returns a CC1Levelset.
+```python
+cclp1 = DATHandler.read("CCLP1.dat")
+print(len(cclp1.levels))
+```
+```
+149
+```
+- `.write()` returns the DAT binary format of the given CC1Levelset. If an optional `filename` in specified, it writes to disk.
+```python
+levelset_binary = DATHandler.write(cc1_levelset)
+DATHandler.write(cc1_levelset, filename="local_file.dat")
+```
+#### Fetching from Gliderbot
+- `.fetch_set_names()` returns a list of all available CC1 sets on [Gliderbot](https://bitbusters.club/gliderbot/sets/cc1/)
+```python
+sets = DATHandler.fetch_set_names()
+print(len(sets))
+```
+```
+543
+```
+- `.fetch_set()` fetches a DAT file from [Gliderbot](https://bitbusters.club/gliderbot/sets/cc1/) and converts it to a CC1Levelset.
+    - **Note that currently the filename must exactly match, i.e. "CCLP1.dat" will work but "CCLP1.DAT" will not.**
+```python
+cclp1 = DATHandler.fetch_set("CCLP1.dat")
+print(cclp1)
+```
+```
+{CC1Levelset, 149 levels}
+```
 
 ### [CC1LevelTransformer Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L501-L641)
 ```python
 from cc_tools import CC1LevelTransformer
 ```
+This class transforms CC1Level objects according to certain rules.
+
+#### Replacements
+- `.replace()` intelligently replaces an element or set of elements `old` with an element `new`.
+    - Uses `.add()` and `.remove()` methods on CC1Level instance to maintain traps, cloners, movement, and tile validity.
+- Example (Replaces all monsters with chips):
+```python
+replaced = CC1LevelTransformer.replace(level, CC1.monsters(), CC1.CHIP)
+```
+- `.replace_mobs()` intelligently replaces a mob or set of mobs `old` with a mob `new`, maintaining directions.
+    - It is generally intended to use prebuilt element sets from the `CC1` class with this method, however feel free to experiment.
+- Example (Replaces all teeth with blobs):
+```python
+replaced = CC1LevelTransformer.replace_mobs(level, CC1.teeth(), CC1.blobs())
+```
+- `.keep()` deletes everything from the level that is not specified in `elements_to_keep`.
+    - Great for building "Walls Of" sets and variations.
+- Example (Keeps all walls (including blue and invisible) as well as all thin walls a.k.a. panels):
+```python
+replaced = CC1LevelTransformer.keep(level, CC1.walls().union(CC1.panels()))
+```
+
+#### Rotations
+- Rotations rotate a CC1Level by 90, 180, or 270 degrees, if possible.
+    - If a level contains a CC1.PANEL_SE tile, an identical copy of the level will be returned (with nothing rotated).
+    - Directions of CC1 elements are intelligently swapped. 
+    - Trap and cloner connections are maintained, along with monster movement.
+Examples:
+```python
+r90 = CC1LevelTransformer.rotate_90(level)
+r180 = CC1LevelTransformer.rotate_180(level)
+r270 = CC1LevelTransformer.rotate_270(level)
+```
+
+#### Flips
+- Flips flip a CC1Level horizontally, vertically, or along either diagonal, if possible.
+    - If a level contains a CC1.PANEL_SE tile, an identical copy of the level will be returned (with nothing flipped).
+    - Directions of CC1 elements are intelligently swapped.  
+    - Trap and cloner connections are maintained, along with monster movement.
+Examples:
+```python
+horiz = CC1LevelTransformer.flip_horizontal(level)
+vert = CC1LevelTransformer.flip_vertical(level)
+diag1 = CC1LevelTransformer.flip_ne_sw(level)
+diag2 = CC1LevelTransformer.flip_nw_se(level)
+```
+
 
 ### [C2MHandler Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/c2m_handler.py#L95-L279) (Limited Functionality)
 ```python
 from cc_tools import C2MHandler
+```
+This class is intended to obfuscate everything related to working with CC2 C2M file formats, as well as fetching files from Gliderbot.
+
+- **This class is experimental and has limited functionality. Use at your own risk.**
+#### C2M Parsing
+- Can parse C2M bytes to a tuple (not very useful yet).
+```python
+with open("local_file.c2m", "rb") as f:
+    parsed_tuple = C2MHandler.Parser.parse_c2m(f.read())
+```
+
+#### C2M Packing and Unpacking
+- Can pack and unpack C2M map data.
+```python
+unpacked = C2MHandler.Parser.unpack(parsed_level.packed_map)
+repacked = C2MHandler.Packer.pack(unpacked)
 ```
 
 ### [CC1LevelImager Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L644-L814) (Limited Functionality)
