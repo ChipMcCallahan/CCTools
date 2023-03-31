@@ -356,6 +356,9 @@ class CC1Cell:
     def __eq__(self, other):
         return (self.top, self.bottom) == (other.top, other.bottom)
 
+    def __str__(self):
+        return f"{{CC1Cell top={self.top} bottom={self.bottom}}}"
+
     def is_valid(self):
         """Check if this cell is invalid due to illegal buried tiles or invalid codes."""
         buried = (self.top not in CC1.mobs() and self.bottom != CC1.FLOOR)
@@ -429,6 +432,9 @@ class CC1Level:
             return self.__dict__ == other.__dict__
         return False
 
+    def __str__(self):
+        return f"{{CC1Level title='{self.title}'}}"
+
     def is_valid(self):
         """Returns whether this level map is valid by CC1 rules."""
         return False not in {cell.is_valid() for cell in self.map}
@@ -496,6 +502,9 @@ class CC1Levelset:
     # pylint: disable=too-few-public-methods
     def __init__(self, parsed=None):
         self.levels = [CC1Level(level) for level in parsed.levels] if parsed else []
+
+    def __str__(self):
+        return f"{{CC1Levelset, {len(self.levels)} levels}}"
 
 
 class CC1LevelTransformer:
