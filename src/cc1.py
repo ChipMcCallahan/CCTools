@@ -443,7 +443,9 @@ class CC1Level:
     def connect(self, pos1, pos2):
         """Connect a trap/clone button with its target."""
         pos1, pos2 = self.__normalize_position(pos1), self.__normalize_position(pos2)
-        e1, e2 = self.at(pos1), self.at(pos2)
+        c1, c2 = self.at(pos1), self.at(pos2)
+        e1 = c1.top if c1.top in CC1.nonmobs() else c1.bottom
+        e2 = c2.top if c2.top in CC1.nonmobs() else c2.bottom
         if {e1, e2} == {CC1.TRAP_BUTTON, CC1.TRAP}:
             source, dest = (pos2, pos1) if e1 == CC1.TRAP else (pos1, pos2)
             self.traps[source] = dest
