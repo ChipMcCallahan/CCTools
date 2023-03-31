@@ -1,4 +1,7 @@
 # CCTools
+```
+pip install git+https://github.com/ChipMcCallahan/CCTools.git
+```
 Tools for working with CC1 (DAT) and CC2 (C2M) files.
 
 ### [CC1 Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L10-L344)
@@ -92,6 +95,7 @@ print(cell)
 from cc_tools import CC1Level
 ```
 
+#### Properties
 - `title`, `chips`, `time`, `password`, and `hint` are all simple properties.
 ```python
 level = CC1Level()
@@ -101,6 +105,9 @@ level.time = 300
 level.password = "ABCD"
 level.hint = "Remember TMET."
 ```
+- `map` and `movement` (lists) as well as `traps` and `cloners` (dicts) are properties as well and can be accessed directly; however, **they should be edited through utility methods whenever possible**.
+
+#### Utility Methods
 - Get or edit map elements with `.at()`, `.add()`, and `.remove()`.
   - Added monsters get appended to `movement`. Deleted monsters get removed from `movement`.
   - If a connected trap/cloner/button is removed, it will get removed from `traps` or `cloners`.
@@ -118,6 +125,19 @@ print(level.at((5, 0)))
 {CC1Cell top=CC1.TEETH_S bottom=CC1.GRAVEL}
 {CC1Cell top=CC1.GRAVEL bottom=CC1.FLOOR}
 ```
+- Connect traps and cloners with `.connect()`.
+```python
+level = CC1Level()
+print(len(level.traps))
+level.add((10, 10), CC1.TRAP_BUTTON)
+level.add((20, 20), CC1.TRAP)
+level.connect((10, 10), (20, 20))
+print(len(level.traps))
+```
+```
+0
+1
+```
 - Check if a level is valid with `.is_valid()`.
 ```python
 level = CC1Level()
@@ -129,11 +149,30 @@ print(level.is_valid())
 True
 False
 ```
-- `trap_controls`, and `clone_controls` can all be accessed as proper
+- Count elements in a level with `.count()`.
+```python
+for i in range(10):
+    level.add((i, 0), CC1.CHIP)
+print(level.count(CC1.CHIP))
+```
+```
+10
+```
 
 ### [CC1Levelset Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L493-L498)
 ```python
 from cc_tools import CC1Levelset
+```
+This class just holds a list of levels.
+```python
+lset = CC1Levelset()
+print(len(lset.levels))
+lset.levels.append(CC1Level())
+print(len(lset.levels))
+```
+```
+0
+1
 ```
 
 ### [DATHandler Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/dat_handler.py#L63-L374)
