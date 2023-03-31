@@ -295,9 +295,20 @@ This class is intended to generate images of CC1 Levels.
 - **Known issue: this class takes a long time (17 seconds on my machine) to construct because it loads each image from URL instead of packaging locally.**
 - **Note: this class uses a custom 8x8 PNG tileset with no other options currently supported.**
 
+#### Level PNG
 Example:
 ```python
 imager = CC1LevelImager() # Takes 10-20 seconds to construct
 imager.save_png(cclp1.levels[0], "key_pyramid.png")
 ```
 ![image](https://user-images.githubusercontent.com/87612918/229225509-7a0cb92f-0e67-472b-ba92-d808d67903f6.png)
+
+#### Levelset PNG
+Example:
+```python
+imager.save_set_png(cclp1, "cclp1.png")
+```
+![image](https://user-images.githubusercontent.com/87612918/229226143-ae1e1d6c-b789-4d0a-a8ed-6e25e58a775b.png)
+
+# Enjoy!
+- Please submit bugs, feature requests, or general feedback to thisischipmccallahan@gmail.com.
