@@ -217,6 +217,31 @@ print(cclp1)
 ```python
 from cc_tools import CC1LevelTransformer
 ```
+This class transforms CC1Level objects according to certain rules.
+
+#### Replacements
+- `.replace()` intelligently replaces an element or set of elements `old` with an element `new`.
+    - Uses `.add()` and `.remove()` methods on CC1Level instance to maintain traps, cloners, movement, and tile validity.
+- Example (Replaces all monsters with chips):
+```python
+replaced = CC1LevelTransformer.replace(level, CC1.monsters(), CC1.CHIP)
+```
+- `.replace_mobs()` intelligently replaces a mob or set of mobs `old` with a mob `new`, maintaining directions.
+    - It is generally intended to use prebuilt element sets from the `CC1` class with this method, however feel free to experiment.
+- Example (Replaces all teeth with blobs):
+```python
+replaced = CC1LevelTransformer.replace_mobs(level, CC1.teeth(), CC1.blobs())
+```
+- `.keep()` deletes everything from the level that is not specified in `elements_to_keep`.
+    - Great for building "Walls Of" sets and variations.
+- Example (Keeps all walls (including blue and invisible) as well as all thin walls a.k.a. panels):
+```python
+replaced = CC1LevelTransformer.keep(level, CC1.walls().union(CC1.panels()))
+```
+
+#### Rotations
+
+#### Flips
 
 ### [C2MHandler Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/c2m_handler.py#L95-L279) (Limited Functionality)
 ```python
