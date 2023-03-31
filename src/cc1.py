@@ -441,6 +441,7 @@ class CC1Level:
 
     def add(self, pos, elem):
         """Add an element at a position, maintaining validity, traps, cloners, and movement."""
+        pos = self.__normalize_position(pos)  # If position in (x, y) format convert to y * 32 + x.
         cell = self.map[pos]
         old_cell = copy.copy(cell)
         was_monster = cell.top in CC1.monsters()
@@ -464,6 +465,7 @@ class CC1Level:
 
     def remove(self, pos, elem):
         """Remove an element at a position, maintaining validity, traps, cloners, and movement."""
+        pos = self.__normalize_position(pos)  # If position in (x, y) format convert to y * 32 + x.
         removed = self.map[pos].remove(elem)
         if removed:
             if elem in CC1.monsters() and pos in self.movement:
@@ -482,6 +484,7 @@ class CC1Level:
         return count
 
     def __update_controls(self, pos, elem):
+        pos = self.__normalize_position(pos)  # If position in (x, y) format convert to y * 32 + x.
         if elem == CC1.TRAP:
             for k, v in tuple(self.traps.items()):
                 if v == pos:
@@ -494,6 +497,15 @@ class CC1Level:
                     self.cloners.pop(k, None)
         elif elem == CC1.CLONE_BUTTON:
             self.cloners.pop(pos, None)
+
+    @staticmethod
+    def __normalize_position(self, p):
+        if isinstance(p, int):
+            return p
+        if len(p) == 2:
+            x, y = p
+            return y * 32 + x
+        raise ValueError(f"Invalid position {p}")
 
 
 class CC1Levelset:
