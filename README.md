@@ -182,7 +182,7 @@ print(len(lset.levels))
 ```python
 from cc_tools import DATHandler
 ```
-This class obfuscates everything related to reading and writing CC1 DAT file formats. It can also fetch sets and set names from the Gliderbot repository.
+This class obfuscates everything related to reading and writing CC1 DAT file formats. It can also fetch sets and set names from the [Gliderbot](https://bitbusters.club/gliderbot/sets/cc1/) repository.
 #### Reading and Writing
 - `.read()` reads a DAT levelset from the local filesystem and returns a CC1Levelset.
 ```python
@@ -272,7 +272,7 @@ diag2 = CC1LevelTransformer.flip_nw_se(level)
 ```python
 from cc_tools import C2MHandler
 ```
-This class is intended to obfuscate everything related to working with CC2 C2M file formats, as well as fetching files from Gliderbot.
+This class is intended to obfuscate everything related to working with CC2 C2M file formats, as well as fetching files from the [Gliderbot](https://bitbusters.club/gliderbot/sets/cc2/) repository.
 
 - **This class is experimental and has limited functionality. Use at your own risk.**
 #### C2M Parsing
