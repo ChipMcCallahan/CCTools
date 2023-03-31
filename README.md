@@ -64,6 +64,12 @@ CC1.NOT_USED_0 is invalid.
 ```
 See [the code](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L196-L344) for a full list of prebuilt element sets.
 
+### [CC1Cell Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L347-L404)
+```python
+from cc_tools import CC1Cell
+```
+This class represents a single (x, y) location in a CC1 Level. It holds two CC1 elements (`top` and `bottom`). It can intelligently add and remove elements while doing its best to maintain CC1 validity; however, **it is always recommended to use the CC1Level object to add or remove elements, since the CC1Level object will also update trap controls, clone controls, and movement data**.
+
 ### [CC1Level Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L407-L490)
 ```python
 from cc_tools import CC1Level
