@@ -123,17 +123,31 @@ class CC1(Enum):
     PLAYER_S = 110
     PLAYER_E = 111
 
+    def dirs(self):
+        """Return the cardinal direction(s) associated with this element."""
+        suffix = self.name.rsplit('_', maxsplit=1)[-1]
+        return suffix if suffix in ("N", "E", "S", "W", "NE", "NW", "SE", "SW") else ""
+
+    def with_dirs(self, dirs):
+        """Returns the same element but with the cardinal direction(s) replaced by {dirs} if
+        possible. Throws if invalid operation."""
+        if dirs not in ("", "N", "E", "S", "W", "NE", "NW", "SE", "SW"):
+            raise ValueError(f"illegal direction(s) specified: {dirs}")
+        if len(self.dirs()) != len(dirs):
+            raise ValueError(f"lengths unequal: self: {len(self.dirs())} vs given: {dirs}")
+        if len(dirs) == 0:
+            return self
+        return CC1[self.name[:-len(dirs)] + dirs]
+
     def right(self):
         """Rotate to the right."""
-        dirs = ("_N", "_E", "_S", "_W")
-        if self.name[-2:] in dirs:
-            index = (dirs.index(self.name[-2:]) + 1) % 4
-            return CC1[self.name[:-2] + dirs[index]]
-        dirs = ("_NW", "_NE", "_SE", "_SW")
-        if self.name[:-3] == "ICE" and self.name[-3:] in dirs:
-            index = (dirs.index(self.name[-3:]) + 1) % 4
-            return CC1[self.name[:-3] + dirs[index]]
-        return self
+        if len(self.dirs()) == 0 or self == CC1.PANEL_SE:
+            return self
+        new_dirs = ""
+        for d in self.dirs():
+            # Build the string backwards so "NE" becomes "SE" instead of "ES"
+            new_dirs = "NESW"[("NESW".index(d) + 1) % 4] + new_dirs
+        return self.with_dirs(new_dirs)
 
     def reverse(self):
         """Reverse direction."""
@@ -142,6 +156,38 @@ class CC1(Enum):
     def left(self):
         """Rotate to the left."""
         return self.right().right().right()
+
+    def flip_horizontal(self):
+        """Flip horizontal."""
+        if self in CC1.mobs() and self.dirs() in "EW":
+            return self.reverse()
+        if self in CC1.ice():
+            return self.left() if self in (CC1.ICE_NE, CC1.ICE_SW) else self.right()
+        return self
+
+    def flip_vertical(self):
+        """Flip vertical."""
+        if self in CC1.mobs() and self.dirs() in "NS":
+            return self.reverse()
+        if self in CC1.ice():
+            return self.left() if self in (CC1.ICE_NW, CC1.ICE_SE) else self.right()
+        return self
+
+    def flip_ne_sw(self):
+        """Flip along diagonal from NE to SW."""
+        if self in (CC1.ICE_NW, CC1.ICE_SE):
+            return self.reverse()
+        if self in CC1.mobs():
+            return self.left() if self.dirs() in "EW" else self.right()
+        return self
+
+    def flip_nw_se(self):
+        """Flip along diagonal from NW to SE."""
+        if self in (CC1.ICE_NE, CC1.ICE_SW):
+            return self.reverse()
+        if self in CC1.mobs():
+            return self.left() if self.dirs() in "NS" else self.right()
+        return self
 
     @classmethod
     def __compass(cls, prefix):
@@ -455,35 +501,102 @@ class CC1Levelset:
 class CC1LevelTransformer:
     """Class that transforms CC1Levels"""
 
+    class Type(Enum):
+        """Enum that represents allowed dihedral transformations of a CC1Level."""
+        R90 = 1
+        R180 = 2
+        R270 = 3
+        FLIP_HORIZONTAL = 4
+        FLIP_VERTICAL = 5
+        FLIP_NE_SW = 6
+        FLIP_NW_SE = 7
+
+    __xy_transformer = {
+        Type.R90: lambda x, y: (31 - y, x),
+        Type.R180: lambda x, y: (31 - x, 31 - y),
+        Type.R270: lambda x, y: (y, 31 - x),
+        Type.FLIP_VERTICAL: lambda x, y: (x, 31 - y),
+        Type.FLIP_HORIZONTAL: lambda x, y: (31 - x, y),
+        Type.FLIP_NE_SW: lambda x, y: (31 - y, 31 - x),
+        Type.FLIP_NW_SE: lambda x, y: (y, x)
+    }
+
+    __element_transformer = {
+        Type.R90: lambda e: e.right(),
+        Type.R180: lambda e: e.reverse(),
+        Type.R270: lambda e: e.left(),
+        Type.FLIP_VERTICAL: lambda e: e.flip_vertical(),
+        Type.FLIP_HORIZONTAL: lambda e: e.flip_horizontal(),
+        Type.FLIP_NE_SW: lambda e: e.flip_ne_sw(),
+        Type.FLIP_NW_SE: lambda e: e.flip_nw_se()
+    }
+
     # pylint: disable=too-few-public-methods
     @staticmethod
-    def __rotate_pos(pos):
-        """Rotates a position on a 32x32 grid 90 degrees to the right."""
-        x, y = pos % 32, pos // 32
-        nx, ny = 31 - y, x
-        return ny * 32 + nx
-
-    @staticmethod
-    def rotate(level):
-        """Rotate a CC1Level to the right by 90 degrees, if it does not contain SE panel."""
+    def __transform(level, _type):
+        """Transform a CC1Level by various rules, but only if it does not contain CC1.PANEL_SE."""
         new_level = copy.deepcopy(level)
         if level.count(CC1.PANEL_SE) > 0:
             return new_level
+
+        def transform(o):
+            if isinstance(o, int):
+                x, y = o % 32, o // 32
+                nx, ny = CC1LevelTransformer.__xy_transformer[_type](x, y)
+                return ny * 32 + nx
+            return CC1LevelTransformer.__element_transformer[_type](o)
+
         for p in range(32 * 32):
-            new_p = CC1LevelTransformer.__rotate_pos(p)
+            new_p = transform(p)
             cell = level.map[p]
-            new_level.map[new_p] = CC1Cell(cell.top.right(), cell.bottom.right())
+            new_level.map[new_p] = CC1Cell(transform(cell.top), transform(cell.bottom))
+
         new_level.traps, new_level.cloners = {}, {}
         new_level.movement = []
         for k, v in level.traps.items():
-            nk, nv = (CC1LevelTransformer.__rotate_pos(p) for p in (k, v))
+            nk, nv = (transform(p) for p in (k, v))
             new_level.traps[nk] = nv
         for k, v in level.cloners.items():
-            nk, nv = (CC1LevelTransformer.__rotate_pos(p) for p in (k, v))
+            nk, nv = (transform(p) for p in (k, v))
             new_level.cloners[nk] = nv
         for p in level.movement:
-            new_level.movement.append(CC1LevelTransformer.__rotate_pos(p))
+            new_level.movement.append(transform(p))
         return new_level
+
+    @staticmethod
+    def rotate_90(level):
+        """Rotate a CC1Level clockwise by 90 degrees, if it does not contain SE panel."""
+        return CC1LevelTransformer.__transform(level, CC1LevelTransformer.Type.R90)
+
+    @staticmethod
+    def rotate_180(level):
+        """Rotate a CC1Level clockwise by 180 degrees, if it does not contain SE panel."""
+        return CC1LevelTransformer.__transform(level, CC1LevelTransformer.Type.R180)
+
+    @staticmethod
+    def rotate_270(level):
+        """Rotate a CC1Level clockwise by 270 degrees, if it does not contain SE panel."""
+        return CC1LevelTransformer.__transform(level, CC1LevelTransformer.Type.R270)
+
+    @staticmethod
+    def flip_horizontal(level):
+        """Flip a CC1Level horizontally, if it does not contain SE panel."""
+        return CC1LevelTransformer.__transform(level, CC1LevelTransformer.Type.FLIP_HORIZONTAL)
+
+    @staticmethod
+    def flip_vertical(level):
+        """Flip a CC1Level vertically, if it does not contain SE panel."""
+        return CC1LevelTransformer.__transform(level, CC1LevelTransformer.Type.FLIP_VERTICAL)
+
+    @staticmethod
+    def flip_ne_sw(level):
+        """Flip a CC1Level along the NE/SW diagonal, if it does not contain SE panel."""
+        return CC1LevelTransformer.__transform(level, CC1LevelTransformer.Type.FLIP_NE_SW)
+
+    @staticmethod
+    def flip_nw_se(level):
+        """Flip a CC1Level along the NW/SE diagonal, if it does not contain SE panel."""
+        return CC1LevelTransformer.__transform(level, CC1LevelTransformer.Type.FLIP_NW_SE)
 
     @staticmethod
     def replace(level, old, new):
@@ -631,9 +744,9 @@ class CC1LevelImager:
         self.images["green_button_8"] = colorize(self.images["button_8"], "green")
         self.images["tank_button_8"] = colorize(self.images["button_8"], "blue")
         force = self.images["force_s_8"]
-        self.images["force_e_8"] = force.rotate(90)
-        self.images["force_n_8"] = force.rotate(180)
-        self.images["force_w_8"] = force.rotate(270)
+        self.images["force_e_8"] = force.rotate_right(90)
+        self.images["force_n_8"] = force.rotate_right(180)
+        self.images["force_w_8"] = force.rotate_right(270)
         for d in "nesw":
             self.images[f"clone_block_{d}_8"] = self.images["block_8"]
         floor = self.images["floor_8"].copy()

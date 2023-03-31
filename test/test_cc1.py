@@ -277,20 +277,47 @@ class TestCC1LevelTransformer(unittest.TestCase):
 
     def test_rotate(self):
         """Unit test for rotating a CC1Level."""
+        r90 = CC1LevelTransformer.rotate_90
+        r180 = CC1LevelTransformer.rotate_180
+        r270 = CC1LevelTransformer.rotate_270
+
         with open(os.path.join(os.getcwd(), "sets/dat/CCLP1.dat"), "rb") as f:
             cclp1 = DATHandler.parse(f.read())
 
-        for level in cclp1.levels:
+        for level in cclp1.levels[100:]:  # Save time on unit tests
             if level.count(CC1.PANEL_SE) > 0:
-                self.assertEqual(level, CC1LevelTransformer.rotate(level))
+                self.assertEqual(level, r90(level))
+                self.assertEqual(level, r180(level))
+                self.assertEqual(level, r270(level))
             else:
-                # Should not be equal after 90-degree rotation
-                rotated = CC1LevelTransformer.rotate(level)
-                self.assertNotEqual(level, rotated)
-                # Should be equal again after 360 degrees
-                for _ in range(3):
-                    rotated = CC1LevelTransformer.rotate(rotated)
-                self.assertEqual(level, rotated)
+                n, e, s, w = level, r90(level), r180(level), r270(level)
+                self.assertNotEqual(n, e)
+                self.assertNotEqual(n, s)
+                self.assertNotEqual(n, w)
+
+                self.assertEqual(r90(e), s)
+                self.assertEqual(r270(w), s)
+                self.assertEqual(r90(w), n)
+                self.assertEqual(r270(e), n)
+
+    def test_flip(self):
+        """Unit test for mirroring (flipping) a CC1Level horizontally."""
+        with open(os.path.join(os.getcwd(), "sets/dat/CCLP1.dat"), "rb") as f:
+            cclp1 = DATHandler.parse(f.read())
+
+        h, v = CC1LevelTransformer.flip_horizontal, CC1LevelTransformer.flip_vertical
+        ne, nw = CC1LevelTransformer.flip_ne_sw, CC1LevelTransformer.flip_nw_se
+        for level in cclp1.levels[100:]:  # Save time on unit tests
+            if level.count(CC1.PANEL_SE) > 0:
+                self.assertEqual(level, h(level))
+                self.assertEqual(level, v(level))
+                self.assertEqual(level, ne(level))
+                self.assertEqual(level, nw(level))
+            else:
+                for flip in (h, v, ne, nw):
+                    flipped = flip(level)
+                    self.assertNotEqual(level, flipped)
+                    self.assertEqual(level, flip(flipped))
 
     def test_replace(self):
         """Unit test for transforming a CC1Level by element replacement."""
