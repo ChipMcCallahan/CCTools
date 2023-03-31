@@ -269,6 +269,22 @@ diag2 = CC1LevelTransformer.flip_nw_se(level)
 ```python
 from cc_tools import C2MHandler
 ```
+This class is intended to obfuscate everything related to working with CC2 C2M file formats, as well as fetching files from Gliderbot.
+
+- **This class is experimental and has limited functionality. Use at your own risk.**
+#### C2M Parsing
+- Can parse C2M bytes to a tuple (not very useful yet).
+```python
+with open("local_file.c2m", "rb") as f:
+    parsed_tuple = C2MHandler.Parser.parse_c2m(f.read())
+```
+
+#### C2M Packing and Unpacking
+- Can pack and unpack C2M map data.
+```python
+unpacked = C2MHandler.Parser.unpack(parsed_level.packed_map)
+repacked = C2MHandler.Packer.pack(unpacked)
+```
 
 ### [CC1LevelImager Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L644-L814) (Limited Functionality)
 ```python
