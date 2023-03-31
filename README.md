@@ -300,3 +300,4 @@ Example:
 imager = CC1LevelImager() # Takes 10-20 seconds to construct
 imager.save_png(cclp1.levels[0], "key_pyramid.png")
 ```
+![image](https://user-images.githubusercontent.com/87612918/229225509-7a0cb92f-0e67-472b-ba92-d808d67903f6.png)
