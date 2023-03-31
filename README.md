@@ -70,6 +70,23 @@ from cc_tools import CC1Cell
 ```
 This class represents a single (x, y) location in a CC1 Level. It holds two CC1 elements (`top` and `bottom`). It can intelligently add and remove elements while doing its best to maintain CC1 validity; however, **it is always recommended to use the CC1Level object to add or remove elements, since the CC1Level object will also update trap controls, clone controls, and movement data**.
 
+```python
+cell = CC1Cell(CC1.TEETH_S, CC1.GRAVEL)
+print(cell)
+cell.add(CC1.BLOB_S)
+print(cell)
+cell.add(CC1.DIRT)
+print(cell)
+cell.remove(CC1.BLOB_S)
+print(cell)
+```
+```
+{CC1Cell top=CC1.TEETH_S bottom=CC1.GRAVEL}
+{CC1Cell top=CC1.BLOB_S bottom=CC1.GRAVEL}
+{CC1Cell top=CC1.BLOB_S bottom=CC1.DIRT}
+{CC1Cell top=CC1.DIRT bottom=CC1.FLOOR}
+```
+
 ### [CC1Level Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L407-L490)
 ```python
 from cc_tools import CC1Level
