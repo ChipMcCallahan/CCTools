@@ -163,6 +163,17 @@ print(level.count(CC1.CHIP))
 ```python
 from cc_tools import CC1Levelset
 ```
+This class just holds a list of levels.
+```python
+lset = CC1Levelset()
+print(len(lset.levels))
+lset.levels.append(CC1Level())
+print(len(lset.levels))
+```
+```
+0
+1
+```
 
 ### [DATHandler Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/dat_handler.py#L63-L374)
 ```python
