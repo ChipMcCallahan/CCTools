@@ -18,7 +18,18 @@ CC1.TANK_W
 CC1.TANK_S
 CC1.TANK_E
 ```
-This works for ice corner tiles such as `CC1.ICE_NW`. If an element cannot be rotated, the same element is returned.
+This works for ice corner tiles such as `CC1.ICE_NW`. If an element cannot be rotated, the same element is returned.  
+
+You can also get the directions on an element, or update the element with new directions.
+```python
+ice_corner = CC1.ICE_SE
+print(ice_corner.dirs())
+print(ice_corner.with_dirs("NW"))
+```
+```
+SE
+CC1.ICE_NW
+```
 #### Element Set Utils
 
 ### [CC1Level Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L407-L490)
