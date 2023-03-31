@@ -96,7 +96,7 @@ class DATHandler:
                 "html.parser")
 
             # Ignore the first link, it is a link to parent directory.
-            return (a.text for a in soup.find_all("a")[1:])
+            return tuple(a.text for a in soup.find_all("a")[1:])
         except Exception as ex:
             raise f"Error retrieving list of sets from Gliderbot: {ex}"
 
