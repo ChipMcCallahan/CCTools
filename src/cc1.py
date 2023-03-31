@@ -499,7 +499,7 @@ class CC1Level:
             self.cloners.pop(pos, None)
 
     @staticmethod
-    def __normalize_position(self, p):
+    def __normalize_position(p):
         if isinstance(p, int):
             return p
         if len(p) == 2:
