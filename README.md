@@ -1,4 +1,7 @@
 # CCTools
+```
+pip install git+https://github.com/ChipMcCallahan/CCTools.git
+```
 Tools for working with CC1 (DAT) and CC2 (C2M) files.
 
 ### [CC1 Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L10-L344)
