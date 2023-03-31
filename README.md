@@ -114,12 +114,13 @@ level.hint = "Remember TMET."
   - If a connected trap/cloner/button is removed, it will get removed from `traps` or `cloners`.
   - If a trap/cloner/button is added, it will not be connected. Use `.connect()` to manually connect traps and cloners.
 ```python
-level.add((5, 0), CC1.TEETH_S)
-print(level.at((5, 0)))
-level.add((5, 0), CC1.GRAVEL)
-print(level.at((5, 0)))
-level.remove((5, 0), CC1.TEETH_S)
-print(level.at((5, 0)))
+p = (5, 0)
+level.add(p, CC1.TEETH_S)
+print(level.at(p))
+level.add(p, CC1.GRAVEL)
+print(level.at(p))
+level.remove(p, CC1.TEETH_S)
+print(level.at(p))
 ```
 ```
 {CC1Cell top=CC1.TEETH_S bottom=CC1.FLOOR}
@@ -130,9 +131,10 @@ print(level.at((5, 0)))
 ```python
 level = CC1Level()
 print(len(level.traps))
-level.add((10, 10), CC1.TRAP_BUTTON)
-level.add((20, 20), CC1.TRAP)
-level.connect((10, 10), (20, 20))
+p1, p2 = (10, 10), (20, 20)
+level.add(p1, CC1.TRAP_BUTTON)
+level.add(p2, CC1.TRAP)
+level.connect(p1, p2)
 print(len(level.traps))
 ```
 ```
