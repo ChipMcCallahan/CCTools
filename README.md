@@ -7,7 +7,18 @@ from cc_tools import CC1
 ```
 This class is basically an enum of CC1 tile codes, along with some very useful utilities as described below.
 #### Direction Utils
-
+```python
+tank = CC1.TANK_N
+print(tank.left())
+print(tank.reverse())
+print(tank.right())
+```
+```
+CC1.TANK_W
+CC1.TANK_S
+CC1.TANK_E
+```
+This works for ice corner tiles such as `CC1.ICE_NW`. If an element cannot be rotated, the same element is returned.
 #### Element Set Utils
 
 ### [CC1Level Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L407-L490)
