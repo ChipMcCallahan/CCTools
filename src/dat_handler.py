@@ -73,6 +73,12 @@ class DATHandler:
         return cls.Writer.write(levelset, filename=filename)
 
     @classmethod
+    def read(cls, filename):
+        """Reads a DAT file from {filename}. Returns a CC1Levelset"""
+        with open(filename, "rb") as f:
+            return cls.parse(f.read())
+
+    @classmethod
     def parse(cls, dat_bytes, *, as_tuple=False):
         """Parses raw bytes in DAT format into elements of a CC1 Levelset."""
         levelset_tuple = cls.Parser.parse(dat_bytes)
