@@ -107,7 +107,7 @@ class DATHandler:
         if resp.status_code < 300:
             logging.info("Successfully retrieved %s.", GLIDERBOT_URL + levelset)
             return DATHandler.parse(resp.content)
-        raise Exception(
+        raise RuntimeError(
             f"Failed to retrieve {GLIDERBOT_URL + levelset}. {resp.status_code}: {resp.reason}")
 
     class Parser(CCBinary.Reader):
@@ -144,7 +144,7 @@ class DATHandler:
                 content = self.bytes(length)
                 bytes_remaining -= length + 2
                 if field == DATConstants.TITLE_FIELD:
-                    title = content[:-1].decode("utf-8")
+                    title = content[:-1].decode("latin-1")
                 elif field == DATConstants.TRAPS_FIELD:
                     traps = self.__parse_traps(content)
                 elif field == DATConstants.CLONERS_FIELD:
@@ -152,7 +152,7 @@ class DATHandler:
                 elif field == DATConstants.PASSWORD_FIELD:
                     password = ''.join([chr(b ^ 0x99) for b in content[:-1]])
                 elif field == DATConstants.HINT_FIELD:
-                    hint = content[:-1].decode("utf-8")
+                    hint = content[:-1].decode("latin-1")
                 elif field == DATConstants.MOVEMENT_FIELD:
                     movement = self.__parse_movement(content)
                 else:
@@ -269,7 +269,7 @@ class DATHandler:
             for field in ordered_fields:
                 if field == DATConstants.TITLE_FIELD and level.title:
                     writer_2.byte(field)
-                    title_bytes = level.title.encode('utf-8') + b'\x00'
+                    title_bytes = level.title.encode('latin-1') + b'\x00'
                     writer_2.byte(len(title_bytes))
                     writer_2.bytes(title_bytes)
                 elif field == DATConstants.TRAPS_FIELD and len(level.trap_controls) > 0:
@@ -288,13 +288,13 @@ class DATHandler:
                             (k % 32, k // 32, v % 32, v // 32))
                 elif field == DATConstants.PASSWORD_FIELD and level.password:
                     writer_2.byte(field)
-                    password_bytes = DATHandler.Writer.encrypt(level.password.encode("utf-8"))
+                    password_bytes = DATHandler.Writer.encrypt(level.password.encode("latin-1"))
                     password_bytes += b'\x00'
                     writer_2.byte(len(password_bytes))
                     writer_2.bytes(password_bytes)
                 elif field == DATConstants.HINT_FIELD and level.hint:
                     writer_2.byte(field)
-                    hint_bytes = level.hint.encode("utf-8") + b'\x00'
+                    hint_bytes = level.hint.encode("latin-1") + b'\x00'
                     writer_2.byte(len(hint_bytes))
                     writer_2.bytes(hint_bytes)
                 elif field == DATConstants.MOVEMENT_FIELD and len(level.movement) > 0:

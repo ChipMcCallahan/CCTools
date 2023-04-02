@@ -1,6 +1,5 @@
 """Class for reading and writing CC1 and CC2 levels in binary format."""
 import io
-import logging
 import struct
 
 
@@ -57,15 +56,13 @@ class CCBinary:
             """Read a long (4 bytes) from IO."""
             return struct.unpack("<L", self.bio.read(4))[0]
 
-        def bytes(self, n_bytes, *, convert_to_utf8=False):
+        def bytes(self, n_bytes):
             """Read n bytes from IO."""
-            result = self.bio.read(n_bytes)
-            try:
-                return result.decode("utf-8") if convert_to_utf8 else result
-            except UnicodeError:
-                # e.g. b'\xc5sa Ehinger Berling\x00' in cc2rejects
-                logging.error("error converting %s to utf-8", result)
-                return result
+            return self.bio.read(n_bytes)
+
+        def text(self, n_bytes):
+            """Read n bytes from IO and convert to latin-1."""
+            return self.bytes(n_bytes).decode("latin-1")
 
         def size(self):
             """The total number of bytes in the reader."""

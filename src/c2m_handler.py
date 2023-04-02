@@ -61,7 +61,7 @@ class C2MConstants:
     REPLAY = b"REPL"
     PACKED_REPLAY = b"PRPL"
     READ_ONLY = b"RDNY"
-    UTF8_FIELDS = frozenset(
+    TEXT_FIELDS = frozenset(
         (FILE_VERSION, LOCK, TITLE, AUTHOR, EDITOR_VERSION, CLUE, NOTE))
     BYTE_FIELDS = frozenset((MAP, PACKED_MAP, KEY, REPLAY, PACKED_REPLAY))
     FIELD_MAP = {
@@ -121,9 +121,8 @@ class C2MHandler:
             while section != C2MConstants.END:
                 fields_in_order.append(section)
                 length = parser.long()
-                if section in C2MConstants.UTF8_FIELDS:
-                    parts[C2MConstants.FIELD_MAP[section]] = parser.bytes(length,
-                                                                          convert_to_utf8=True)[:-1]
+                if section in C2MConstants.TEXT_FIELDS:
+                    parts[C2MConstants.FIELD_MAP[section]] = parser.text(length)
                 elif section in C2MConstants.BYTE_FIELDS:
                     parts[C2MConstants.FIELD_MAP[section]] = parser.bytes(length)
                 elif section == C2MConstants.OPTIONS:
