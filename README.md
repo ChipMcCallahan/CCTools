@@ -21,7 +21,8 @@ CC1.TANK_W
 CC1.TANK_S
 CC1.TANK_E
 ```
-This works for ice corner tiles such as `CC1.ICE_NW`. If an element cannot be rotated, the same element is returned.  
+- This also works for ice corner tiles such as `CC1.ICE_NW`. 
+- If an element cannot be rotated, the same element is returned.  
 
 You can also get the directions on an element, or update the element with new directions.
 ```python
@@ -113,12 +114,13 @@ level.hint = "Remember TMET."
   - If a connected trap/cloner/button is removed, it will get removed from `traps` or `cloners`.
   - If a trap/cloner/button is added, it will not be connected. Use `.connect()` to manually connect traps and cloners.
 ```python
-level.add((5, 0), CC1.TEETH_S)
-print(level.at((5, 0)))
-level.add((5, 0), CC1.GRAVEL)
-print(level.at((5, 0)))
-level.remove((5, 0), CC1.TEETH_S)
-print(level.at((5, 0)))
+p = (5, 0)
+level.add(p, CC1.TEETH_S)
+print(level.at(p))
+level.add(p, CC1.GRAVEL)
+print(level.at(p))
+level.remove(p, CC1.TEETH_S)
+print(level.at(p))
 ```
 ```
 {CC1Cell top=CC1.TEETH_S bottom=CC1.FLOOR}
@@ -129,9 +131,10 @@ print(level.at((5, 0)))
 ```python
 level = CC1Level()
 print(len(level.traps))
-level.add((10, 10), CC1.TRAP_BUTTON)
-level.add((20, 20), CC1.TRAP)
-level.connect((10, 10), (20, 20))
+p1, p2 = (10, 10), (20, 20)
+level.add(p1, CC1.TRAP_BUTTON)
+level.add(p2, CC1.TRAP)
+level.connect(p1, p2)
 print(len(level.traps))
 ```
 ```
@@ -179,7 +182,7 @@ print(len(lset.levels))
 ```python
 from cc_tools import DATHandler
 ```
-This class obfuscates everything related to reading and writing CC1 DAT file formats. It can also fetch sets and set names from the Gliderbot repository.
+This class obfuscates everything related to reading and writing CC1 DAT file formats. It can also fetch sets and set names from the [Gliderbot](https://bitbusters.club/gliderbot/sets/cc1/) repository.
 #### Reading and Writing
 - `.read()` reads a DAT levelset from the local filesystem and returns a CC1Levelset.
 ```python
@@ -269,7 +272,7 @@ diag2 = CC1LevelTransformer.flip_nw_se(level)
 ```python
 from cc_tools import C2MHandler
 ```
-This class is intended to obfuscate everything related to working with CC2 C2M file formats, as well as fetching files from Gliderbot.
+This class is intended to obfuscate everything related to working with CC2 C2M file formats, as well as fetching files from the [Gliderbot](https://bitbusters.club/gliderbot/sets/cc2/) repository.
 
 - **This class is experimental and has limited functionality. Use at your own risk.**
 #### C2M Parsing
@@ -282,7 +285,7 @@ with open("local_file.c2m", "rb") as f:
 #### C2M Packing and Unpacking
 - Can pack and unpack C2M map data.
 ```python
-unpacked = C2MHandler.Parser.unpack(parsed_level.packed_map)
+unpacked = C2MHandler.Parser.unpack(parsed_tuple.packed_map)
 repacked = C2MHandler.Packer.pack(unpacked)
 ```
 
@@ -290,3 +293,25 @@ repacked = C2MHandler.Packer.pack(unpacked)
 ```python
 from cc_tools import CC1LevelImager
 ```
+This class is intended to generate images of CC1 Levels.
+- **This class is experimental and has limited functionality. Use at your own risk.**
+- **Known issue: this class takes a long time (17 seconds on my machine) to construct because it loads each image from URL instead of packaging locally.**
+- **Note: this class uses a custom 8x8 PNG tileset with no other options currently supported.**
+
+#### Level PNG
+Example:
+```python
+imager = CC1LevelImager() # Takes 10-20 seconds to construct
+imager.save_png(cc1.levels[0], "lesson1.png")
+```
+![image](https://user-images.githubusercontent.com/87612918/229225509-7a0cb92f-0e67-472b-ba92-d808d67903f6.png)
+
+#### Levelset PNG
+Example:
+```python
+imager.save_set_png(cc1, "cc1.png")
+```
+![image](https://user-images.githubusercontent.com/87612918/229226143-ae1e1d6c-b789-4d0a-a8ed-6e25e58a775b.png)
+
+# Enjoy!
+- Please submit bugs, feature requests, or general feedback to thisischipmccallahan@gmail.com.
