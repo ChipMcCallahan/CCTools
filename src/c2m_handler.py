@@ -115,11 +115,9 @@ class C2MHandler:
             """Parses raw bytes in C2M format into elements of a CC2 level."""
             # pylint: disable=too-many-branches
             parser = C2MHandler.Parser(raw_bytes)
-            fields_in_order = []
             parts = defaultdict(lambda: None)
             section = parser.bytes(4)
             while section != C2MConstants.END:
-                fields_in_order.append(section)
                 length = parser.long()
                 if section in C2MConstants.TEXT_FIELDS:
                     parts[C2MConstants.FIELD_MAP[section]] = parser.text(length)
