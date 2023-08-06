@@ -289,6 +289,50 @@ unpacked = C2MHandler.Parser.unpack(parsed_tuple.packed_map)
 repacked = C2MHandler.Packer.pack(unpacked)
 ```
 
+### [TWS Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/tws_handler.py#L104-L212) (Limited Functionality)
+```python
+from cc_tools import TWSHandler
+```
+This class is intended to read a TWS file into a simple JSON format. See [TWS Spec](https://www.muppetlabs.com/~breadbox/software/tworld/tworldff.html#3).
+
+- **This class is experimental and has limited functionality. Use at your own risk.**
+#### TWS Parsing
+- Can parse TWS file to JSON format.
+
+**Code**
+```python
+result = TWSHandler('public_CCLP3.dac.tws').decode()
+print(f"Levelset name is '{result['levelset_name']}'.")
+print(f"Ruleset is {result['header']['ruleset']}.")
+print(f"Found {len(result['records'])} records.")
+```
+
+**Output**
+```
+Levelset name is 'public_CCLP3.dac'.
+Ruleset is MS.
+Found 149 records.
+```
+
+**Code**
+```python
+record1 = result['records'][0]
+print(f"Level: {record1['level_number']}.")
+print(f"Password: {record1['level_password']}.")
+print(f"RNG Value: {record1['rng_value']}.")
+print(f"Solution Time in Ticks: {record1['time_in_ticks']}.")
+print(f"First 2 moves: {record1['solution_moves'][:2]}")
+```
+
+**Output** (Refer to [TWS Spec](https://www.muppetlabs.com/~breadbox/software/tworld/tworldff.html#3) for how to interpret directions.)
+```
+Level: 1.
+Password: LQXN.
+RNG Value: 717110846.
+Solution Time in Ticks: 2169.
+First 2 moves: [{'time': 1, 'direction': 3}, {'time': 5, 'direction': 0}]
+```
+
 ### [CC1LevelImager Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L644-L814) (Limited Functionality)
 ```python
 from cc_tools import CC1LevelImager
