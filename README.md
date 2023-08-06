@@ -298,6 +298,8 @@ This class is intended to read a TWS file into a simple JSON format. See [TWS Sp
 - **This class is experimental and has limited functionality. Use at your own risk.**
 #### TWS Parsing
 - Can parse TWS file to JSON format.
+
+**Code**
 ```python
 result = TWSHandler('public_CCLP3.dac.tws').decode()
 print(f"Levelset name is '{result['levelset_name']}'.")
@@ -312,6 +314,7 @@ Ruleset is MS.
 Found 149 records.
 ```
 
+**Code**
 ```python
 record1 = result['records'][0]
 print(f"Level: {record1['level_number']}.")
