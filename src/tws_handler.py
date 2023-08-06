@@ -3,7 +3,9 @@
 This module contains two classes, TWSSolutionMoveDecoder and TWSHandler, which are used to decode a
 TWS file. TWS files are typically used to store solutions to the game Chip's Challenge. The
 TWSSolutionMoveDecoder class decodes solution moves in various formats, while TWSHandler class
-decodes the header, first record, level number, password and full records from the TWS file.
+decodes the header, first record, level number, password and full records from the TWS file. For an
+explanation of the TWS format, see
+https://www.muppetlabs.com/~breadbox/software/tworld/tworldff.html#3.
 """
 import struct
 
