@@ -3,6 +3,7 @@ import copy
 import math
 from enum import Enum
 import importlib.resources
+
 from PIL import Image, ImageOps
 
 
@@ -804,8 +805,13 @@ class CC1LevelImager:
     @staticmethod
     def __load_img(filename):
         file_path = importlib.resources.files('cc_tools.art.8x8') / filename
-        with open(file_path, 'rb') as f:
-            return Image.open(f)
+
+        # Directly open the image using PIL
+        with Image.open(file_path) as img:
+            # Check if the image is already in PNG format
+            if img.format != 'PNG':
+                raise ValueError("Image is not in PNG format.")
+            return img.copy()
 
     @staticmethod
     def __colorize(img, color):

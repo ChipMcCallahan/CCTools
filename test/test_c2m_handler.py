@@ -1,4 +1,5 @@
 """Tests for C2M Handler."""
+import importlib.resources
 import os
 import unittest
 import logging
@@ -36,9 +37,10 @@ class TestC2MHandlerOnLocalLevels(unittest.TestCase):
             repacked = C2MHandler.Packer.pack(unpacked)
             self.assertEqual(packed, repacked, f"Unpack/Repack failed for local bytes packed_{i}.")
 
-        sets_dir = os.path.join(os.getcwd(), "sets/c2m")
-        c2ms = sum([read_all_files(d) for d in
-                    (os.path.join(sets_dir, path) for path in os.listdir(sets_dir))], [])
+        c2m_path = importlib.resources.files('cc_tools.sets.c2m')
+
+        # flatten the list of lists using 'sum'
+        c2ms = sum([read_all_files(d) for d in c2m_path.iterdir() if d.is_file()], [])
 
         for c2m in c2ms:
             try:

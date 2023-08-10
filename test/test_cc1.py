@@ -1,6 +1,5 @@
 """Tests for CC1."""
-
-import os
+import importlib.resources
 import unittest
 from src.cc1 import CC1, CC1Cell, CC1Level, CC1LevelTransformer
 from src.dat_handler import DATHandler
@@ -281,7 +280,8 @@ class TestCC1LevelTransformer(unittest.TestCase):
         r180 = CC1LevelTransformer.rotate_180
         r270 = CC1LevelTransformer.rotate_270
 
-        with open(os.path.join(os.getcwd(), "sets/dat/CCLP1.dat"), "rb") as f:
+        dat_file_path = importlib.resources.files('cc_tools.sets.dat') / 'CCLP1.dat'
+        with open(dat_file_path, 'rb') as f:
             cclp1 = DATHandler.parse(f.read())
 
         for level in cclp1.levels[100:]:  # Save time on unit tests
@@ -302,7 +302,8 @@ class TestCC1LevelTransformer(unittest.TestCase):
 
     def test_flip(self):
         """Unit test for mirroring (flipping) a CC1Level horizontally."""
-        with open(os.path.join(os.getcwd(), "sets/dat/CCLP1.dat"), "rb") as f:
+        dat_file_path = importlib.resources.files('cc_tools.sets.dat') / 'CCLP1.dat'
+        with open(dat_file_path, 'rb') as f:
             cclp1 = DATHandler.parse(f.read())
 
         h, v = CC1LevelTransformer.flip_horizontal, CC1LevelTransformer.flip_vertical
