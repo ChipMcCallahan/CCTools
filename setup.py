@@ -7,14 +7,14 @@ setup(
     author='Chip McCallahan',
     author_email='thisischipmccallahan@gmail.com',
     # Needed to actually package something
-    packages=['cc_tools'],
+    packages=find_packages(where="src"),
     package_data={'cc_tools': [
         'art/8x8/*.png',
         'sets/dat/*.dat',
         'sets/c2m/*/*.c2m',
         'replays/*.tws'
     ]},
-    package_dir={'cc_tools': 'src'},
+    package_dir={"": "src"},
     # Needed for dependencies
     install_requires=[
         'bs4',
