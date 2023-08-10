@@ -809,8 +809,10 @@ class CC1LevelImager:
         with open(file_path, 'rb') as f:
             data = BytesIO(f.read())
         img = Image.open(data)
-        img.load()  # Force the image to be fully loaded into memory
-        return img
+        buffer = BytesIO()
+        img.save(buffer, format='PNG')
+        img_loaded = Image.open(buffer)
+        return img_loaded
 
     @staticmethod
     def __colorize(img, color):
