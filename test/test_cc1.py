@@ -1,11 +1,11 @@
 """Tests for CC1."""
 import importlib.resources
 import unittest
-from src.cc1 import CC1
-from src.cc1_cell import CC1Cell
-from src.cc1_level import CC1Level
-from src.cc1_level_transformer import CC1LevelTransformer
-from src.dat_handler import DATHandler
+from cc_tools.cc1 import CC1
+from cc_tools.cc1_cell import CC1Cell
+from cc_tools.cc1_level import CC1Level
+from cc_tools.cc1_level_transformer import CC1LevelTransformer
+from cc_tools.dat_handler import DATHandler
 
 
 class TestCC1(unittest.TestCase):

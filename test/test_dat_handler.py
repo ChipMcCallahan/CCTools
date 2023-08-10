@@ -2,10 +2,10 @@
 import importlib.resources
 import unittest
 
-from src.cc1 import CC1
-from src.cc1_level import CC1Level
-from src.cc1_levelset import CC1Levelset
-from src.dat_handler import DATHandler
+from cc_tools.cc1 import CC1
+from cc_tools.cc1_level import CC1Level
+from cc_tools.cc1_levelset import CC1Levelset
+from cc_tools.dat_handler import DATHandler
 
 
 class TestParseAndWriteOnOfficialSets(unittest.TestCase):

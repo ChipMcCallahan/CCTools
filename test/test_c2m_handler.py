@@ -4,7 +4,7 @@ import os
 import unittest
 import logging
 
-from src.c2m_handler import C2MHandler
+from cc_tools.c2m_handler import C2MHandler
 
 
 class TestC2MHandlerOnLocalLevels(unittest.TestCase):

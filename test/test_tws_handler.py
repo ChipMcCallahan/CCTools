@@ -2,7 +2,7 @@
 import unittest
 import importlib.resources
 
-from src.tws_handler import TWSHandler
+from cc_tools.tws_handler import TWSHandler
 
 
 class TestParseOfficialReplays(unittest.TestCase):

@@ -1,10 +1,5 @@
 """Enumeration of tile codes used in CC1 DAT files, and associated utils."""
-import copy
-import math
 from enum import Enum
-import importlib.resources
-
-from PIL import Image, ImageOps
 
 
 class CC1(Enum):
