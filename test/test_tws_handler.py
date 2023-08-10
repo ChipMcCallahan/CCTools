@@ -4,6 +4,7 @@ import importlib.resources
 
 from src.tws_handler import TWSHandler
 
+
 class TestParseOfficialReplays(unittest.TestCase):
     """Tests for TWS Handler parsing official replays."""
     def test_parse(self):

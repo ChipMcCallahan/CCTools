@@ -1,6 +1,4 @@
-"""Module for working with Chip's Challenge 1 levels and levelsets."""
-from .c2m_handler import *
-from .cc1 import *
-from .cc_binary import *
-from .dat_handler import *
-from .tws_handler import *
+"""
+Module for working with Chip's Challenge 1 levels and levelsets.
+Best Practice: Import the parts of your package that you consider to be the "core" public interface.
+"""

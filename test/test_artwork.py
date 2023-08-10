@@ -2,7 +2,7 @@
 import logging
 import unittest
 import importlib.resources
-from src.cc1 import CC1LevelImager
+from src.cc1_level_imager import CC1LevelImager
 
 
 class Test8x8ArtworkPresent(unittest.TestCase):

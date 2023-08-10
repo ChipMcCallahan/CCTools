@@ -11,6 +11,7 @@ import struct
 
 from collections import defaultdict
 
+
 class TWSSolutionMoveDecoder:
     # pylint: disable=too-few-public-methods
     """

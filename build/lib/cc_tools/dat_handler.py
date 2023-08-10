@@ -5,7 +5,8 @@ import requests
 from bs4 import BeautifulSoup
 
 from .cc_binary import CCBinary
-from .cc1 import CC1Levelset, CC1Level
+from .cc1_levelset import CC1Levelset
+from .cc1_level import CC1Level
 
 GLIDERBOT_URL = "https://bitbusters.club/gliderbot/sets/cc1/"
 
@@ -377,4 +378,4 @@ class DATHandler:
                 return ParsedDATLevelset([DATHandler.Writer.serialize(lvl)
                                           for lvl in levelset.levels], None)
             raise TypeError(f"Tried to serialize {level_or_levelset} but was not CC1Level or "
-                            f"CC1Levelset.")
+                            f"CC1Levelset. Was type {type(level_or_levelset)}")

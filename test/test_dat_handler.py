@@ -2,8 +2,10 @@
 import importlib.resources
 import unittest
 
+from src.cc1 import CC1
+from src.cc1_level import CC1Level
+from src.cc1_levelset import CC1Levelset
 from src.dat_handler import DATHandler
-from src.cc1 import CC1, CC1Level, CC1Levelset
 
 
 class TestParseAndWriteOnOfficialSets(unittest.TestCase):
