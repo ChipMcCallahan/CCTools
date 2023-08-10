@@ -339,13 +339,12 @@ from cc_tools import CC1LevelImager
 ```
 This class is intended to generate images of CC1 Levels.
 - **This class is experimental and has limited functionality. Use at your own risk.**
-- **Known issue: this class takes a long time (17 seconds on my machine) to construct because it loads each image from URL instead of packaging locally.**
 - **Note: this class uses a custom 8x8 PNG tileset with no other options currently supported.**
 
 #### Level PNG
 Example:
 ```python
-imager = CC1LevelImager() # Takes 10-20 seconds to construct
+imager = CC1LevelImager()
 imager.save_png(cc1.levels[0], "lesson1.png")
 ```
 ![image](https://user-images.githubusercontent.com/87612918/229225509-7a0cb92f-0e67-472b-ba92-d808d67903f6.png)
