@@ -3,6 +3,8 @@ import copy
 import math
 from enum import Enum
 import importlib.resources
+from io import BytesIO
+
 from PIL import Image, ImageOps
 
 
@@ -805,9 +807,10 @@ class CC1LevelImager:
     def __load_img(filename):
         file_path = importlib.resources.files('cc_tools.art.8x8') / filename
         with open(file_path, 'rb') as f:
-            img = Image.open(f)
-            img.load() # Force the image to be fully loaded into memory
-            return img
+            data = BytesIO(f.read())
+        img = Image.open(data)
+        img.load()  # Force the image to be fully loaded into memory
+        return img
 
     @staticmethod
     def __colorize(img, color):
