@@ -66,7 +66,7 @@ CC1.PLAYER_N is a mob.
 --------------------
 CC1.NOT_USED_0 is invalid.
 ```
-See [the code](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc1.py#L196-L344) for a full list of prebuilt element sets.
+See [the code](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc_tools/cc1.py) for a full list of prebuilt element sets.
 
 ### [CC1Cell Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc_tools/cc1_cell.py)
 ```python
