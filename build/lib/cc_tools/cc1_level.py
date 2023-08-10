@@ -1,8 +1,8 @@
 """Class that represents a CC1 level."""
 import copy
 
-from src.cc1 import CC1
-from src.cc1_cell import CC1Cell
+from .cc1 import CC1
+from .cc1_cell import CC1Cell
 
 
 class CC1Level:
