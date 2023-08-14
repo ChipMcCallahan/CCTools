@@ -244,7 +244,7 @@ class DATHandler:
             writer_1.short(level.number or number)
             writer_1.short(level.time or 0)
             writer_1.short(level.chips or 0)
-            writer_1.short(level.map_detail or 0)
+            writer_1.short(level.map_detail or 1)
             layer_1, layer_2 = DATHandler.Writer.write_layers(level.map)
             writer_1.short(len(layer_1))
             writer_1.bytes(layer_1)
