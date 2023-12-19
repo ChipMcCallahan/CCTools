@@ -1,9 +1,0 @@
-Metadata-Version: 2.1
-Name: cc-tools
-Version: 0.1
-Summary: Assorted tools for working with and displaying Chip's Challenge levels in DAT or C2M file format.
-Home-page: https://github.com/ChipMcCallahan/CCTools
-Author: Chip McCallahan
-Author-email: thisischipmccallahan@gmail.com
-License: LICENSE
-License-File: LICENSE
