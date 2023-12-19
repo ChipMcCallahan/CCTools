@@ -246,6 +246,7 @@ class DATHandler:
             writer_1.short(level.chips or 0)
 
             writer_1.short(1)
+            raise writer_1.written()
 
             layer_1, layer_2 = DATHandler.Writer.write_layers(level.map)
             writer_1.short(len(layer_1))
