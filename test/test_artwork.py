@@ -103,4 +103,3 @@ class Test8x8ArtworkPresent(unittest.TestCase):
     def test_imager_initialize(self):
         """Test that the imager initializes."""
         CC1LevelImager()
-        
