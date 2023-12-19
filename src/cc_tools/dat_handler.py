@@ -245,12 +245,7 @@ class DATHandler:
             writer_1.short(level.time or 0)
             writer_1.short(level.chips or 0)
 
-            # Realistically, we should always be writing 1 here. However, this
-            # preserves the option of writing 0 if using a custom level tuple.
-            map_detail = 1
-            if hasattr(level, 'map_detail') and isinstance(level.map_detail, int):
-                map_detail = level.map_detail
-            writer_1.short(map_detail)
+            writer_1.short(1)
 
             layer_1, layer_2 = DATHandler.Writer.write_layers(level.map)
             writer_1.short(len(layer_1))
