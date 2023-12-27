@@ -10,90 +10,15 @@ class CC1LevelImager:
 
     # pylint: disable=too-few-public-methods
     def __init__(self):
-        # base_path = "https://raw.githubusercontent.com/ChipMcCallahan/CCTools/main/art/8x8/"
-        image_files = [
-            "ant_e_8.png",
-            "ant_n_8.png",
-            "ant_s_8.png",
-            "ant_w_8.png",
-            "ball_e_8.png",
-            "ball_n_8.png",
-            "ball_s_8.png",
-            "ball_w_8.png",
-            "blob_e_8.png",
-            "blob_n_8.png",
-            "blob_s_8.png",
-            "blob_w_8.png",
-            "block_8.png",
-            "block_transparent_8.png",
-            "blue_wall_fake_8.png",
-            "blue_wall_real_8.png",
-            "bomb_8.png",
-            "button_8.png",
-            "chip_8.png",
-            "cloner_8.png",
-            "dirt_8.png",
-            "door_8.png",
-            "exit_8.png",
-            "fire_8.png",
-            "fire_boots_8.png",
-            "fireball_e_8.png",
-            "fireball_n_8.png",
-            "fireball_s_8.png",
-            "fireball_w_8.png",
-            "flippers_8.png",
-            "floor_8.png",
-            "force_random_8.png",
-            "force_s_8.png",
-            "glider_e_8.png",
-            "glider_n_8.png",
-            "glider_s_8.png",
-            "glider_w_8.png",
-            "gravel_8.png",
-            "hint_8.png",
-            "ice_8.png",
-            "ice_ne_8.png",
-            "ice_nw_8.png",
-            "ice_se_8.png",
-            "ice_sw_8.png",
-            "inv_wall_app_8.png",
-            "inv_wall_perm_8.png",
-            "key_8.png",
-            "panel_horizontal_8.png",
-            "panel_se_8.png",
-            "panel_vertical_8.png",
-            "paramecium_e_8.png",
-            "paramecium_n_8.png",
-            "paramecium_s_8.png",
-            "paramecium_w_8.png",
-            "player_e_8.png",
-            "player_n_8.png",
-            "player_s_8.png",
-            "player_w_8.png",
-            "pop_up_wall_8.png",
-            "skates_8.png",
-            "socket_8.png",
-            "suction_boots_8.png",
-            "tank_e_8.png",
-            "tank_n_8.png",
-            "tank_s_8.png",
-            "tank_w_8.png",
-            "teeth_e_8.png",
-            "teeth_n_8.png",
-            "teeth_s_8.png",
-            "teeth_w_8.png",
-            "teleport_8.png",
-            "thief_8.png",
-            "toggle_floor_8.png",
-            "toggle_wall_8.png",
-            "trap_8.png",
-            "walker_e_8.png",
-            "walker_n_8.png",
-            "walker_s_8.png",
-            "walker_w_8.png",
-            "wall_8.png",
-            "water_8.png"
-        ]
+        package = 'cc_tools.art.8x8'
+        try:
+            # Use files() to get a Traversable object for the directory
+            directory = importlib.resources.files(package)
+            # Iterate over the directory contents
+            image_files = [f.name for f in directory.iterdir() if f.name.endswith('.png')]
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Package '{package}' not found or cannot be accessed.")
+
         self.images = {}
         for image_file in image_files:
             prefix = image_file.split('.')[0]
