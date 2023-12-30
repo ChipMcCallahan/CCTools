@@ -24,6 +24,12 @@ class CC1LevelViewer(tk.Tk):
         self.level_imager = CC1LevelImager("8x8")
         self.view_menu = None
 
+        with importlib.resources.path('cc_tools.sets.dat', '') as package_dir:
+            file_path = package_dir / "CCLP1.dat"
+
+        if file_path:
+            self.level_set = DATHandler.read(file_path)
+
         self.init_ui()
 
     def init_ui(self):
@@ -52,6 +58,8 @@ class CC1LevelViewer(tk.Tk):
         self.bind("<Left>", self.previous_level)
         self.bind("<Right>", self.next_level)
         self.bind('s', lambda event: self.toggle_secrets())
+        if self.level_set:
+            self.display_level()
 
     def toggle_secrets(self):
         self.show_secrets_var.set(not self.show_secrets_var.get())
@@ -64,6 +72,7 @@ class CC1LevelViewer(tk.Tk):
                 initialdir=str(package_dir))  # Use the package directory path
 
         if file_path:
+            self.current_level_index = 0
             self.level_set = DATHandler.read(file_path)
             self.display_level()
 

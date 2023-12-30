@@ -8,12 +8,13 @@ setup(
     author_email='thisischipmccallahan@gmail.com',
     # Needed to actually package something
     packages=find_packages(where="src"),
-    package_data={'cc_tools': [
-        'art/8x8/*.png',
-        'sets/dat/*.dat',
-        'sets/c2m/*/*.c2m',
-        'replays/*.tws'
-    ]},
+    package_data={
+        'cc_tools': [
+            'art/*/*',  # 2 levels deep
+            'sets/*/*',  # 2 levels deep
+            'replays/*'  # 1 level deep
+        ]
+    },
     package_dir={"": "src"},
     # Needed for dependencies
     install_requires=[

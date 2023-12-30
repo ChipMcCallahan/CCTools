@@ -177,42 +177,46 @@ class CC1SpriteSet:
         img_new.putalpha(alpha)
         return img_new
 
-    def load_sprite_file(self, filename):
+    @staticmethod
+    def load_sprite_file(package, filename):
         """
         Load a sprite image from a file within the specified package.
 
         Args:
+            package (str): The package path of the sprite image to load.
             filename (str): The filename of the sprite image to load.
 
         Returns:
             PIL.Image.Image: The loaded sprite image.
         """
-        with importlib.resources.path(self.package, filename) as path:
+        with importlib.resources.path(package, filename) as path:
             return Image.open(path)
 
     @staticmethod
     def factory_8x8():
         """
-        Factory method to create a sprite set with 8x8 pixel sprites.
+        Factory method to create a sprite set from the "8x8" set of sprites.
 
         Returns: CC1SpriteSet: A new instance of CC1SpriteSet with 8x8 pixel
         sprites.
         """
         spriteset = CC1SpriteSet(size_in_pixels=8, subdirectory="8x8")
+        package = "cc_tools.art.8x8"
         try:
             # Use files() to get a Traversable object for the directory
-            directory = importlib.resources.files(spriteset.package)
+            directory = importlib.resources.files(package)
             # Iterate over the directory contents
             image_files = [f.name for f in directory.iterdir() if
                            f.name.lower().endswith('.png')]
         except FileNotFoundError as exc:
-            raise FileNotFoundError(f"Package '{spriteset.package}' not "
+            raise FileNotFoundError(f"Package '{package}' not "
                                     f"found or cannot be accessed.") from exc
 
         spriteset.sprites = {}
         for image_file in image_files:
             prefix = image_file.split('.')[0]
-            spriteset.sprites[prefix] = spriteset.load_sprite_file(image_file)
+            load = CC1SpriteSet.load_sprite_file
+            spriteset.sprites[prefix] = load(package, image_file)
         colorize = CC1SpriteSet.__colorize
         for color in (RED, GREEN, BLUE, YELLOW):
             spriteset.sprites[f"{color}_KEY"] = colorize(
@@ -253,6 +257,16 @@ class CC1SpriteSet:
         spriteset.sprites["ARROW_W"] = arrow.rotate(180)
         spriteset.sprites["ARROW_S"] = arrow.rotate(270)
         return spriteset
+
+    @staticmethod
+    def factory_ms_bmp_magenta(filename):
+        """
+        Factory method to create a sprite set from any standardized MSCC
+        bmp which uses magenta for transparency.
+
+        Returns: CC1SpriteSet: A new instance of CC1SpriteSet with 8x8 pixel
+        sprites.
+        """
 
     @staticmethod
     def available_sprite_sets():

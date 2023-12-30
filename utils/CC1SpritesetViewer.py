@@ -29,6 +29,9 @@ class CC1SpriteViewer(tk.Tk):
 
         self.init_ui()
 
+        # Must be after init_ui()
+        self.load_sprite_set("8x8")
+
     def init_ui(self):
         self.menu_bar = Menu(self)
         self.file_menu = Menu(self.menu_bar, tearoff=0)
