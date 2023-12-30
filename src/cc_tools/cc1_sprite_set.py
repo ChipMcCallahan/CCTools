@@ -227,6 +227,8 @@ class CC1SpriteSet:
             spriteset.sprites["BUTTON"], GREEN)
         spriteset.sprites["TANK_BUTTON"] = colorize(
             spriteset.sprites["BUTTON"], BLUE)
+
+        # Rotate is unintuitively COUNTER clockwise.
         force = spriteset.sprites["FORCE_S"]
         spriteset.sprites["FORCE_E"] = force.rotate(90)
         spriteset.sprites["FORCE_N"] = force.rotate(180)
@@ -244,10 +246,12 @@ class CC1SpriteSet:
         spriteset.sprites["PANEL_S"].paste(h, (0, 6), h)
         spriteset.sprites["PANEL_W"] = floor.copy()
         spriteset.sprites["PANEL_W"].paste(v, (0, 0), v)
+
+        # Rotate is unintuitively COUNTER clockwise.
         arrow = spriteset.sprites["ARROW_E"]
-        spriteset.sprites["ARROW_S"] = arrow.rotate(90)
+        spriteset.sprites["ARROW_N"] = arrow.rotate(90)
         spriteset.sprites["ARROW_W"] = arrow.rotate(180)
-        spriteset.sprites["ARROW_N"] = arrow.rotate(270)
+        spriteset.sprites["ARROW_S"] = arrow.rotate(270)
         return spriteset
 
     @staticmethod
