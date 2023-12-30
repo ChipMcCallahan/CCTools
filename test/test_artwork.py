@@ -88,6 +88,7 @@ class Test8x8ArtworkPresent(unittest.TestCase):
         "PLAYER_W",
         "PLAYER_S",
         "PLAYER_E",
+        "ARROW_E"
     }
 
     def test_8x8(self):

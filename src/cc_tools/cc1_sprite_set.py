@@ -83,17 +83,31 @@ class CC1SpriteSet:
         load_set_by_name: Static method to load a sprite set by name.
     """
 
+    SHOW_SECRETS_MAP = {
+        "BLOCK": "BLOCK_TRANSPARENT",
+        "CLONE_BLOCK_N": "BLOCK_TRANSPARENT",
+        "CLONE_BLOCK_E": "BLOCK_TRANSPARENT",
+        "CLONE_BLOCK_S": "BLOCK_TRANSPARENT",
+        "CLONE_BLOCK_W": "BLOCK_TRANSPARENT",
+    }
+    HIDE_SECRETS_MAP = {
+        "BLUE_WALL_FAKE": "BLUE_WALL_REAL",
+        "INV_WALL_PERM": "FLOOR",
+        "INV_WALL_APP": "FLOOR"
+    }
+
     def __init__(self, size_in_pixels, subdirectory):
         """
-        Initializes the CC1SpriteSet with sprites of a specified size from a given subdirectory.
+        Initializes the CC1SpriteSet with sprites of a specified size from a
+        given subdirectory.
 
-        Args:
-            size_in_pixels (int): Size of the sprites in pixels.
-            subdirectory (str): Subdirectory within the package containing the sprite images.
+        Args: size_in_pixels (int): Size of the sprites in pixels.
+        subdirectory (str): Subdirectory within the package containing the
+        sprite images.
         """
         self.sprites = {}
         self.size_in_pixels = size_in_pixels
-        self.show_secrets = False
+        self.show_secrets = True
         self.package = f"cc_tools.art.{subdirectory}"
 
     def get_sprite(self, lookup_key):
@@ -101,17 +115,24 @@ class CC1SpriteSet:
         Retrieve a sprite image by its corresponding CC1 enum value or name.
 
         Args:
-            lookup_key (CC1 Enum or str): The key to lookup the sprite image.
+            lookup_key (CC1 Enum or str): The key to look up the sprite image.
 
         Returns:
             PIL.Image.Image: The corresponding sprite image.
         """
         name = lookup_key.name if isinstance(lookup_key, CC1) else lookup_key
-        return self.sprites.get(name)
+        name = (
+            CC1SpriteSet.SHOW_SECRETS_MAP.get(name, name)
+            if self.show_secrets
+            else CC1SpriteSet.HIDE_SECRETS_MAP.get(name, name)
+        )
+
+        return self.sprites[name]
 
     def validate(self):
         """
-        Validates that all valid sprites required by the CC1 enum are loaded in the sprite set.
+        Validates that all valid sprites required by the CC1 enum are loaded
+        in the sprite set.
 
         Raises:
             ValueError: If any sprite required by the CC1 enum is missing.
@@ -120,12 +141,12 @@ class CC1SpriteSet:
         if missing:
             raise ValueError(f"Missing sprites for: {missing}")
 
-    def set_transparency(self, value: bool):
+    def set_show_secrets(self, value: bool):
         """
-        Sets the transparency flag for the sprite set.
+        Sets the show_secrets flag for the sprite set.
 
         Args:
-            value (bool): True to enable transparency, False to disable it.
+            value (bool): True to enable showing secrets, False to disable.
         """
         self.show_secrets = value
 
@@ -174,18 +195,19 @@ class CC1SpriteSet:
         """
         Factory method to create a sprite set with 8x8 pixel sprites.
 
-        Returns:
-            CC1SpriteSet: A new instance of CC1SpriteSet with 8x8 pixel sprites.
+        Returns: CC1SpriteSet: A new instance of CC1SpriteSet with 8x8 pixel
+        sprites.
         """
         spriteset = CC1SpriteSet(size_in_pixels=8, subdirectory="8x8")
         try:
             # Use files() to get a Traversable object for the directory
             directory = importlib.resources.files(spriteset.package)
             # Iterate over the directory contents
-            image_files = [f.name for f in directory.iterdir() if f.name.lower().endswith('.png')]
+            image_files = [f.name for f in directory.iterdir() if
+                           f.name.lower().endswith('.png')]
         except FileNotFoundError as exc:
-            raise FileNotFoundError(f"Package '{spriteset.package}' not found or cannot be "
-                                    f"accessed.") from exc
+            raise FileNotFoundError(f"Package '{spriteset.package}' not "
+                                    f"found or cannot be accessed.") from exc
 
         spriteset.sprites = {}
         for image_file in image_files:
@@ -193,12 +215,18 @@ class CC1SpriteSet:
             spriteset.sprites[prefix] = spriteset.load_sprite_file(image_file)
         colorize = CC1SpriteSet.__colorize
         for color in (RED, GREEN, BLUE, YELLOW):
-            spriteset.sprites[f"{color}_KEY"] = colorize(spriteset.sprites["KEY"], color)
-            spriteset.sprites[f"{color}_DOOR"] = colorize(spriteset.sprites["DOOR"], color)
-        spriteset.sprites["CLONE_BUTTON"] = colorize(spriteset.sprites["BUTTON"], RED)
-        spriteset.sprites["TRAP_BUTTON"] = colorize(spriteset.sprites["BUTTON"], BROWN)
-        spriteset.sprites["GREEN_BUTTON"] = colorize(spriteset.sprites["BUTTON"], GREEN)
-        spriteset.sprites["TANK_BUTTON"] = colorize(spriteset.sprites["BUTTON"], BLUE)
+            spriteset.sprites[f"{color}_KEY"] = colorize(
+                spriteset.sprites["KEY"], color)
+            spriteset.sprites[f"{color}_DOOR"] = colorize(
+                spriteset.sprites["DOOR"], color)
+        spriteset.sprites["CLONE_BUTTON"] = colorize(
+            spriteset.sprites["BUTTON"], RED)
+        spriteset.sprites["TRAP_BUTTON"] = colorize(
+            spriteset.sprites["BUTTON"], BROWN)
+        spriteset.sprites["GREEN_BUTTON"] = colorize(
+            spriteset.sprites["BUTTON"], GREEN)
+        spriteset.sprites["TANK_BUTTON"] = colorize(
+            spriteset.sprites["BUTTON"], BLUE)
         force = spriteset.sprites["FORCE_S"]
         spriteset.sprites["FORCE_E"] = force.rotate(90)
         spriteset.sprites["FORCE_N"] = force.rotate(180)
@@ -216,6 +244,10 @@ class CC1SpriteSet:
         spriteset.sprites["PANEL_S"].paste(h, (0, 6), h)
         spriteset.sprites["PANEL_W"] = floor.copy()
         spriteset.sprites["PANEL_W"].paste(v, (0, 0), v)
+        arrow = spriteset.sprites["ARROW_E"]
+        spriteset.sprites["ARROW_S"] = arrow.rotate(90)
+        spriteset.sprites["ARROW_W"] = arrow.rotate(180)
+        spriteset.sprites["ARROW_N"] = arrow.rotate(270)
         return spriteset
 
     @staticmethod
@@ -223,8 +255,8 @@ class CC1SpriteSet:
         """
         Lists the available sprite sets.
 
-        Returns:
-            dict: A dictionary of available sprite sets with their names as keys.
+        Returns: dict: A dictionary of available sprite sets with their
+        names as keys.
         """
         return {"8x8": CC1SpriteSet.factory_8x8()}
 
@@ -239,8 +271,8 @@ class CC1SpriteSet:
         Returns:
             CC1SpriteSet: The loaded sprite set.
 
-        Raises:
-            ValueError: If the given name does not correspond to any available sprite set.
+        Raises: ValueError: If the given name does not correspond to any
+        available sprite set.
         """
         if name == "8x8":
             return CC1SpriteSet.factory_8x8()
