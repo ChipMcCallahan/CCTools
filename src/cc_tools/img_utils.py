@@ -83,6 +83,71 @@ def colorize(img, color):
     return img_new
 
 
+def create_bounding_box_transparency(tile, bounding_box):
+    """
+    Create a version of an image with everything outside a given bounding
+    box made transparent.
+
+    Args: tile (PIL.Image): The image to be processed. bounding_box (tuple):
+    A tuple of (x1, y1, x2, y2) representing the bounding box.
+
+    Returns:
+    PIL.Image: A new image with transparency applied outside the bounding box.
+    """
+    if tile.mode != 'RGBA':
+        raise ValueError("Tile must be in RGBA mode")
+
+    # Create a transparent base image of the same size as 'tile'
+    transparent_base = Image.new('RGBA', tile.size, (0, 0, 0, 0))
+
+    # Crop the tile according to the bounding box
+    cropped_tile = tile.crop(bounding_box)
+
+    # Calculate the position to paste the cropped tile onto the transparent
+    # base
+    paste_x, paste_y = bounding_box[0], bounding_box[1]
+
+    # Paste the cropped tile onto the transparent base
+    transparent_base.paste(cropped_tile, (paste_x, paste_y), cropped_tile)
+
+    return transparent_base
+
+
+def compass_paste_16(image, direction):
+    """
+    Paste a 16x16 PIL image on a 32x32 transparent image, centered on the
+    specified side.
+
+    Args: image (PIL.Image): A 16x16 PIL image. direction (str): One of "N",
+    "E", "S", "W" indicating the side to paste the image.
+
+    Returns: PIL.Image: A 32x32 transparent image with the 16x16 image
+    pasted as specified.
+    """
+    if image.size != (16, 16):
+        raise ValueError("Image must be 16x16 pixels in size")
+
+    # Create a 32x32 transparent image
+    output_image = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
+
+    # Define paste positions based on direction
+    paste_positions = {
+        "N": (8, 0),   # Centered on the north side
+        "E": (16, 8),  # Centered on the east side
+        "S": (8, 16),  # Centered on the south side
+        "W": (0, 8)    # Centered on the west side
+    }
+
+    if direction not in paste_positions:
+        raise ValueError("Direction must be one of 'N', 'E', 'S', 'W'")
+
+    # Paste the 16x16 image onto the 32x32 image at the specified position
+    paste_position = paste_positions[direction]
+    output_image.paste(image, paste_position)
+
+    return output_image
+
+
 def draw_red_line(image, x1, y1, x2, y2):
     """
     Draws a red line on a PIL image.
@@ -99,6 +164,40 @@ def draw_red_line(image, x1, y1, x2, y2):
     draw.line((x1, y1, x2, y2), fill="red", width=1)
 
     return image
+
+
+def flatten(*images):
+    """
+    Flatten multiple PIL.Image objects into a single image.
+
+    Args: *images: A variable number of PIL.Image objects in RGBA mode and
+    of the same size.
+
+    Returns:
+    A single PIL.Image object in RGBA mode with all images pasted together,
+    with the first image at the bottom and the last on top.
+    """
+    if not images:
+        raise ValueError("No images provided")
+
+    # Check if all images are in 'RGBA' mode and have the same size
+    base_image = images[0]
+    if base_image.mode != 'RGBA':
+        raise ValueError("All images must be in RGBA mode")
+
+    for img in images:
+        if img.mode != 'RGBA' or img.size != base_image.size:
+            raise ValueError(
+                "All images must be in RGBA mode and have the same size")
+
+    # Create a new image to paste all others onto
+    output_image = Image.new('RGBA', base_image.size)
+
+    # Paste each image onto the output image
+    for img in images:
+        output_image.paste(img, (0, 0), img)
+
+    return output_image
 
 
 def load_sprite_file(package, filename):
