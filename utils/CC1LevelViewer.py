@@ -11,9 +11,11 @@ class CC1LevelViewer(tk.Tk):
         super().__init__()
         self.configure(bg='black')  # Set the background color
         self.title("CC1 Level Viewer")
-        self.geometry("800x600")  # Adjust as needed
+        self.geometry("1200x1200")  # Adjust as needed
         self.show_secrets_var = tk.BooleanVar()
         self.show_secrets_var.set(True)
+        self.show_connections_var = tk.BooleanVar()
+        self.show_connections_var.set(True)
 
         self.menu_bar = None
         self.file_menu = None
@@ -21,7 +23,7 @@ class CC1LevelViewer(tk.Tk):
         self.level_image_label = None
         self.level_set = None
         self.current_level_index = 0
-        self.level_imager = CC1LevelImager("8x8")
+        self.level_imager = CC1LevelImager("mscc")
         self.view_menu = None
 
         with importlib.resources.path('cc_tools.sets.dat', '') as package_dir:
@@ -47,6 +49,10 @@ class CC1LevelViewer(tk.Tk):
                                        offvalue=False,
                                        variable=self.show_secrets_var,
                                        command=self.display_level)
+        self.view_menu.add_checkbutton(label="Show Connections", onvalue=True,
+                                       offvalue=False,
+                                       variable=self.show_connections_var,
+                                       command=self.display_level)
         self.menu_bar.add_cascade(label="View", menu=self.view_menu)
 
         # Labels for level title and image
@@ -58,11 +64,16 @@ class CC1LevelViewer(tk.Tk):
         self.bind("<Left>", self.previous_level)
         self.bind("<Right>", self.next_level)
         self.bind('s', lambda event: self.toggle_secrets())
+        self.bind('c', lambda event: self.toggle_connections())
         if self.level_set:
             self.display_level()
 
     def toggle_secrets(self):
         self.show_secrets_var.set(not self.show_secrets_var.get())
+        self.display_level()
+
+    def toggle_connections(self):
+        self.show_connections_var.set(not self.show_connections_var.get())
         self.display_level()
 
     def load_level_set(self):
@@ -78,11 +89,12 @@ class CC1LevelViewer(tk.Tk):
 
     def display_level(self):
         self.level_imager.set_show_secrets(self.show_secrets_var.get())
+        self.level_imager.set_show_connections(self.show_connections_var.get())
         if self.level_set and 0 <= self.current_level_index < len(
                 self.level_set.levels):
             level = self.level_set.levels[self.current_level_index]
             self.level_title_label.config(text=level.title)
-            level_image = self.level_imager.image8(level)
+            level_image = self.level_imager.level_image(level)
             tk_image = ImageTk.PhotoImage(level_image)
             self.level_image_label.config(image=tk_image)
             self.level_image_label.image = tk_image  # Keep a reference
