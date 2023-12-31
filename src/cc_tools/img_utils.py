@@ -1,7 +1,7 @@
 """Assorted PIL Image tranformation utils."""
 
 import importlib.resources
-from PIL import Image, ImageOps, ImageDraw
+from PIL import Image, ImageOps, ImageDraw, ImageFont
 
 RED = "RED"
 YELLOW = "YELLOW"
@@ -16,6 +16,53 @@ COLORS = {
     BLUE: "#0000FF",
     BROWN: "#A52A2A"
 }
+
+
+def add_text_label_to_image(image, text, position=(0, 0), font_size=10,
+                            padding=2):
+    """
+    Draws right-justified text on a PIL image with a black box behind the text.
+
+    Args: image (PIL.Image.Image): The image on which to draw the text. text
+    (str): The text to be drawn. position (tuple): The position (x, y) where
+    the right edge of the text will be aligned. font_size (int): The font
+    size of the text. padding (int): Padding around the text inside the box.
+
+    Returns: PIL.Image.Image: The image with the right-justified text and
+    black box drawn on it.
+    """
+    draw = ImageDraw.Draw(image)
+
+    # Optionally use a truetype font
+    # font = ImageFont.truetype("arial.ttf", font_size)
+    # For simplicity, using default font
+    font = ImageFont.load_default()
+
+    # Calculate text width using textlength and height using font size
+    text_width = draw.textlength(text, font=font)
+    # Approximation, as the actual height depends on the font
+    text_height = font_size
+
+    # Calculate box dimensions
+    box_width = text_width + 2 * padding
+    box_height = text_height + 2 * padding
+
+    # Adjust position to right-justify the text
+    text_position = (position[0] - text_width, position[1])
+
+    # Calculate box position
+    box_position = (text_position[0] - padding, text_position[1] - padding,
+                    text_position[0] + box_width - padding,
+                    text_position[1] + box_height - padding)
+
+    # Draw the black box
+    draw.rectangle(box_position, fill="black")
+
+    # Draw the text
+    draw.text(text_position, text, fill="white",
+              font=font)  # White color for text for contrast
+
+    return image
 
 
 def colorize(img, color):

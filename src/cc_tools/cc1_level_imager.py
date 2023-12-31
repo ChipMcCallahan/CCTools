@@ -5,7 +5,7 @@ from PIL import Image
 
 from cc_tools import CC1
 from cc_tools.cc1_sprite_set import CC1SpriteSet
-from cc_tools.img_utils import draw_red_line
+from cc_tools.img_utils import draw_red_line, add_text_label_to_image
 
 
 class CC1LevelImager:
@@ -18,6 +18,8 @@ class CC1LevelImager:
         self.set_show_secrets(True)
         self.show_connections = None
         self.set_show_connections(True)
+        self.show_monster_order = None
+        self.set_show_monster_order(True)
 
     def set_sprite_set(self, sprite_set_name):
         """Set the sprite set to use for level imaging."""
@@ -34,8 +36,12 @@ class CC1LevelImager:
         self.sprite_set.set_show_secrets(show_secrets)
 
     def set_show_connections(self, show_connections):
-        """Set the show_secrets boolean on self and CC1SpriteSet."""
+        """Set the show_connections boolean."""
         self.show_connections = show_connections
+
+    def set_show_monster_order(self, show_monster_order):
+        """Set the show_monster_order boolean."""
+        self.show_monster_order = show_monster_order
 
     def level_image(self, cc1level):
         """Create an 8x8 PNG image from a CC1Level."""
@@ -47,9 +53,16 @@ class CC1LevelImager:
                 cell = cc1level.map[j * 32 + i]
                 tile_img = self.get_sprite_copy(cell.bottom)
 
-                # If the top layer is different from the bottom, process it
+                # If the top layer is different from the bottom, process it.
                 if cell.top != cell.bottom:
                     self.process_top_layer(cell, tile_img)
+
+                # Draw the monster order as a number.
+                p = i + j * 32
+                if p in cc1level.movement:
+                    index = str(cc1level.movement.index(p))
+                    tile_img = add_text_label_to_image(tile_img, index,
+                                                       (30, 20))
 
                 map_img.paste(tile_img, (i * size, j * size))
 
