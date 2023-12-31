@@ -31,7 +31,7 @@ Example:
     Creating an instance of CC1SpriteSet and loading sprites from a specified directory:
 
     ```
-    sprite_set = CC1SpriteSet(size_in_pixels=8, subdirectory="path/to/sprites")
+    sprite_set = CC1SpriteSet(size_in_pixels=8)
     sprite_set.load_sprite_file("example_sprite.png")
     ```
 
@@ -70,7 +70,6 @@ class CC1SpriteSet:
         sprites (dict): A dictionary mapping sprite names to PIL Image objects.
         size_in_pixels (int): The pixel size for each sprite.
         show_secrets (bool): A flag to indicate whether to show secret elements.
-        package (str): The package directory from which sprites are loaded.
 
     Methods:
         get_sprite: Retrieve a sprite by its name or corresponding CC1 enum.
@@ -96,19 +95,15 @@ class CC1SpriteSet:
         "INV_WALL_APP": "FLOOR"
     }
 
-    def __init__(self, size_in_pixels, subdirectory):
+    def __init__(self, size_in_pixels):
         """
-        Initializes the CC1SpriteSet with sprites of a specified size from a
-        given subdirectory.
+        Initializes the CC1SpriteSet.
 
         Args: size_in_pixels (int): Size of the sprites in pixels.
-        subdirectory (str): Subdirectory within the package containing the
-        sprite images.
         """
         self.sprites = {}
         self.size_in_pixels = size_in_pixels
         self.show_secrets = True
-        self.package = f"cc_tools.art.{subdirectory}"
 
     def get_sprite(self, lookup_key):
         """
@@ -200,7 +195,7 @@ class CC1SpriteSet:
         Returns: CC1SpriteSet: A new instance of CC1SpriteSet with 8x8 pixel
         sprites.
         """
-        spriteset = CC1SpriteSet(size_in_pixels=8, subdirectory="8x8")
+        spriteset = CC1SpriteSet(size_in_pixels=8)
         package = "cc_tools.art.8x8"
         try:
             # Use files() to get a Traversable object for the directory
@@ -212,7 +207,6 @@ class CC1SpriteSet:
             raise FileNotFoundError(f"Package '{package}' not "
                                     f"found or cannot be accessed.") from exc
 
-        spriteset.sprites = {}
         for image_file in image_files:
             prefix = image_file.split('.')[0]
             load = CC1SpriteSet.load_sprite_file
@@ -259,7 +253,83 @@ class CC1SpriteSet:
         return spriteset
 
     @staticmethod
-    def factory_ms_bmp_magenta(filename):
+    def make_transparent(image, colors):
+        """
+        Makes specified colors in a PIL Image object transparent.
+
+        Args: image (PIL.Image.Image): The image to process. colors (list or
+        tuple): A list or tuple of color values to make transparent. Each
+        color should be in the format (R, G, B) or (R, G, B, A).
+
+        Returns:
+        PIL.Image.Image: A new image with specified colors made transparent.
+        """
+
+        # Ensure image is in RGBA mode
+        if image.mode != 'RGBA':
+            image = image.convert('RGBA')
+
+        # Create a new image for output
+        new_image = Image.new('RGBA', image.size)
+        width, height = image.size
+
+        # Iterate through each pixel
+        for x in range(width):
+            for y in range(height):
+                current_color = image.getpixel((x, y))
+
+                # Check if the current color matches any in the list
+                if current_color[:3] in [color[:3] for color in colors]:
+                    # Make transparent
+                    new_image.putpixel((x, y), (0, 0, 0, 0))
+                else:
+                    # Copy pixel
+                    new_image.putpixel((x, y), current_color)
+
+        return new_image
+
+    @staticmethod
+    def create_transparent_image(white_tile, black_tile):
+        """
+        Creates a transparent image from two tiles: one on a white background and one on a black background.
+        Any pixel that is white in the white image and black in the black image becomes transparent.
+
+        Args:
+            white_tile (PIL.Image.Image): The tile image on a white background.
+            black_tile (PIL.Image.Image): The tile image on a black background.
+
+        Returns:
+            PIL.Image.Image: A new image with specified pixels made transparent.
+        """
+
+        # Ensure both images are in RGBA mode
+        white_tile = white_tile.convert("RGBA")
+        black_tile = black_tile.convert("RGBA")
+
+        width, height = white_tile.size
+        transparent_img = Image.new("RGBA", (width, height))
+
+        for y in range(height):
+            for x in range(width):
+                white_pixel = white_tile.getpixel((x, y))
+                black_pixel = black_tile.getpixel((x, y))
+
+                # Check if the pixel is white in white_tile and black in black_tile
+                if white_pixel[:3] == (255, 255, 255) and black_pixel[:3] == (
+                0, 0, 0):
+                    # Make the pixel fully transparent
+                    alpha = 0
+                else:
+                    # Keep the pixel from the white_tile and fully opaque
+                    alpha = 255
+
+                new_pixel = (*white_pixel[:3], alpha)
+                transparent_img.putpixel((x, y), new_pixel)
+
+        return transparent_img
+
+    @staticmethod
+    def factory(filename):
         """
         Factory method to create a sprite set from any standardized MSCC
         bmp which uses magenta for transparency.
@@ -267,6 +337,36 @@ class CC1SpriteSet:
         Returns: CC1SpriteSet: A new instance of CC1SpriteSet with 8x8 pixel
         sprites.
         """
+        mscc = filename in ["mscc.bmp"]
+        subdir = "mscc" if mscc else "tw"
+
+        raw = CC1SpriteSet.load_sprite_file(f"cc_tools.art.{subdir}", filename)
+
+        raw = CC1SpriteSet.make_transparent(
+            raw, [(255, 0, 255)]
+        ) if raw.mode != 'RGBA' and not mscc else raw
+
+        width, height = raw.size
+        assert (height % 16 == 0)
+        size = height // 16
+
+        def tile(x_index, y_index):
+            i, j = x_index * size, y_index * size
+            return raw.crop((i, j, i + size, j + size))
+
+        spriteset = CC1SpriteSet(size_in_pixels=size)
+        for index, elem in enumerate(CC1):
+            x, y = index // 16, index % 16
+            if mscc and x > 3:
+                white_tile = tile(x + 3, y)
+                black_tile = tile(x + 6, y)
+                spriteset.sprites[
+                    elem.name] = CC1SpriteSet.create_transparent_image(
+                    white_tile,
+                    black_tile)
+            else:
+                spriteset.sprites[elem.name] = tile(x, y)
+        return spriteset
 
     @staticmethod
     def available_sprite_sets():
@@ -276,7 +376,8 @@ class CC1SpriteSet:
         Returns: dict: A dictionary of available sprite sets with their
         names as keys.
         """
-        return {"8x8": CC1SpriteSet.factory_8x8()}
+        return ["8x8", "felix32", "steam32", "lynx_for_twms48",
+                "silly_world_ms48", "tileworld48", "mscc"]
 
     @staticmethod
     def load_set_by_name(name):
@@ -294,4 +395,11 @@ class CC1SpriteSet:
         """
         if name == "8x8":
             return CC1SpriteSet.factory_8x8()
+        elif name in ["steam32", "lynx_for_twms48",
+                      "silly_world_ms48", "tileworld48"]:
+            return CC1SpriteSet.factory(f"{name}.bmp")
+        elif name in ["felix32"]:
+            return CC1SpriteSet.factory(f"{name}.png")
+        elif name in ["mscc"]:
+            return CC1SpriteSet.factory(f"mscc.bmp")
         raise ValueError(f"{name} not a valid sprite set name")

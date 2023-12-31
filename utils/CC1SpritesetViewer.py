@@ -18,13 +18,14 @@ class CC1SpriteViewer(tk.Tk):
         self.available_sets = CC1SpriteSet.available_sprite_sets()
         self.current_key = CC1.FLOOR
         self.current_sprite = None
-        self.enum_members = list(CC1.valid())
+        self.enum_members = sorted(list(CC1.valid()), key=lambda x: x.value)
         self.file_menu = None
         self.magnified_image_label = None
         self.menu_bar = None
         self.sprite_image_label = None
         self.sprite_name_label = None
         self.sprite_set = None
+        self.sprite_set_name = None
         self.view_menu = None
 
         self.init_ui()
@@ -36,7 +37,7 @@ class CC1SpriteViewer(tk.Tk):
         self.menu_bar = Menu(self)
         self.file_menu = Menu(self.menu_bar, tearoff=0)
 
-        for set_name in self.available_sets.keys():
+        for set_name in self.available_sets:
             self.file_menu.add_command(label=set_name,
                                        command=lambda
                                        n=set_name: self.load_sprite_set(n))
@@ -63,6 +64,8 @@ class CC1SpriteViewer(tk.Tk):
 
         self.bind("<Left>", self.previous_sprite)
         self.bind("<Right>", self.next_sprite)
+        self.bind("<Up>", self.next_sprite_set)
+        self.bind("<Down>", self.previous_sprite_set)
         self.bind('s', lambda event: self.toggle_secrets())
 
     def toggle_secrets(self):
@@ -70,7 +73,8 @@ class CC1SpriteViewer(tk.Tk):
         self.update_sprite()
 
     def load_sprite_set(self, setname):
-        self.sprite_set = self.available_sets[setname]
+        self.sprite_set = CC1SpriteSet.load_set_by_name(setname)
+        self.sprite_set_name = setname
         self.update_sprite()
 
     def update_sprite(self):
@@ -102,6 +106,16 @@ class CC1SpriteViewer(tk.Tk):
         prev_index = (current_index - 1) % len(self.enum_members)
         self.current_key = self.enum_members[prev_index]
         self.update_sprite()
+
+    def next_sprite_set(self, event):
+        current_index = self.available_sets.index(self.sprite_set_name)
+        next_index = (current_index + 1) % len(self.available_sets)
+        self.load_sprite_set(self.available_sets[next_index])
+
+    def previous_sprite_set(self, event):
+        current_index = self.available_sets.index(self.sprite_set_name)
+        prev_index = (current_index - 1) % len(self.available_sets)
+        self.load_sprite_set(self.available_sets[prev_index])
 
 
 if __name__ == "__main__":
