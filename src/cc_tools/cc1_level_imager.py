@@ -5,15 +5,18 @@ from PIL import Image
 
 from cc_tools import CC1
 from cc_tools.cc1_sprite_set import CC1SpriteSet
-from cc_tools.img_utils import draw_red_line, add_text_label_to_image
+from cc_tools.img_utils import draw_red_line, add_text_label_to_image, \
+    make_semi_transparent, lighten_image, draw_directional_arrow
 
 
 class CC1LevelImager:
     """Class that creates images of CC1Levels"""
 
     # pylint: disable=too-few-public-methods
-    def __init__(self, sprite_set_name="8x8"):
-        self.sprite_set = CC1SpriteSet.load_set_by_name(sprite_set_name)
+    def __init__(self):
+        self.sprite_sets = CC1SpriteSet.create_sprite_sets()
+        self.sprite_set_name = "default"
+        self.sprite_set = self.sprite_sets[self.sprite_set_name]
         self.show_secrets = None
         self.set_show_secrets(True)
         self.show_connections = None
@@ -21,19 +24,24 @@ class CC1LevelImager:
         self.show_monster_order = None
         self.set_show_monster_order(True)
 
+        self.arrows = {}
+        sizes = [s.get_size_in_pixels() for s in self.sprite_sets.values()]
+        for s in sizes:
+            for d in "NESW":
+                self.arrows[f"ARROW_{s}_{d}"] = draw_directional_arrow(s, d)
+
     def set_sprite_set(self, sprite_set_name):
         """Set the sprite set to use for level imaging."""
-        self.sprite_set = CC1SpriteSet.load_set_by_name(sprite_set_name)
+        self.sprite_set_name = sprite_set_name
+        self.sprite_set = self.sprite_sets[sprite_set_name]
 
     def get_sprite_copy(self, cc1_elem):
         """Get copy of associated image for a CC1 element."""
-        name = cc1_elem.name if isinstance(cc1_elem, CC1) else cc1_elem
-        return self.sprite_set.get_sprite(name).copy()
+        return self.sprite_set.get_sprite(cc1_elem).copy()
 
     def set_show_secrets(self, show_secrets):
         """Set the show_secrets boolean on self and CC1SpriteSet."""
         self.show_secrets = show_secrets
-        self.sprite_set.set_show_secrets(show_secrets)
 
     def set_show_connections(self, show_connections):
         """Set the show_connections boolean."""
@@ -57,12 +65,15 @@ class CC1LevelImager:
                 if cell.top != cell.bottom:
                     self.process_top_layer(cell, tile_img)
 
-                # Draw the monster order as a number.
-                p = i + j * 32
-                if p in cc1level.movement:
-                    index = str(cc1level.movement.index(p))
-                    tile_img = add_text_label_to_image(tile_img, index,
-                                                       (30, 20))
+                if self.show_monster_order and size >= 32:
+                    # Draw the monster order as a number.
+                    p = i + j * 32
+                    scale = size / 32
+                    if p in cc1level.movement:
+                        index = str(cc1level.movement.index(p))
+                        tile_img = add_text_label_to_image(tile_img, index,
+                                                           (30 * scale,
+                                                            20 * scale))
 
                 map_img.paste(tile_img, (i * size, j * size))
 
@@ -79,19 +90,26 @@ class CC1LevelImager:
 
     def process_top_layer(self, cell, tile_img):
         """Process the top layer of a cell and paste it onto the tile image."""
-        paste = self.get_sprite_copy(cell.top).convert('RGBA')
-        mask = paste.split()[3]  # Use alpha channel as mask
-        tile_img.paste(paste, (0, 0), mask)
+        top_img = self.get_sprite_copy(cell.top).convert('RGBA')
+        if self.show_secrets and cell.top in CC1.blocks():
+            # TODO: cache this.
+            top_img = make_semi_transparent(top_img)
 
-        # Add a direction arrow for mobs if necessary and secrets are shown
-        if (self.show_secrets and
-                cell.top in CC1.mobs() and cell.top != CC1.BLOCK):
+        if self.show_secrets and cell.top == CC1.BLUE_WALL_FAKE:
+            top_img = lighten_image(top_img, 40)  # increase brightness by N %
+
+        tile_img.paste(top_img, (0, 0), top_img)
+
+        # Handle direction arrows and block transparency
+        if self.show_secrets and cell.top in CC1.mobs():
             d = CC1.dirs(cell.top)
-            arrow = self.get_sprite_copy(f"ARROW_{d}")
-            tile_img.paste(arrow, (0, 0), arrow)
+            if d:
+                size = self.sprite_set.get_size_in_pixels()
+                arrow = self.arrows[f"ARROW_{size}_{d}"]
+                tile_img.paste(arrow, (0, 0), arrow)
 
     def save_png(self, level, filename):
-        """Create an 8x8 PNG image from a CC1Level and save it to file."""
+        """Create an image from a CC1Level and save it to file."""
         self.level_image(level).save(filename, format='png')
 
     def save_set_png(self, levelset, filename, *, levels_per_row=10, margin=8):

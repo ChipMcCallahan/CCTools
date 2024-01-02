@@ -1,3 +1,4 @@
+# pylint: disable=no-member,too-many-statements,too-few-public-methods
 """
 Module: CC2 Sprite Set
 """
@@ -12,6 +13,7 @@ MINT_GREEN = (81, 205, 106)
 
 
 class CC2SpriteSet:
+    """Sprite set for CC2-style artwork."""
     def __init__(self):
         """
         Initializes the CC1SpriteSet.
@@ -30,7 +32,7 @@ class CC2SpriteSet:
         sprites.
         """
 
-        raw = load_sprite_file(f"cc_tools.art.cc2", filename)
+        raw = load_sprite_file("cc_tools.art.cc2", filename)
         raw = make_transparent(raw, [MINT_GREEN])
 
         assert raw.size == (16 * 32, 32 * 32)

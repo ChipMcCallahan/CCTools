@@ -1,123 +1,67 @@
 import tkinter as tk
-from tkinter import filedialog, Menu
 from PIL import Image, ImageTk
-from src.cc_tools.cc1_sprite_set import \
-    CC1SpriteSet  # Adjust the import path as needed
-from src.cc_tools.cc1 import CC1
+
+from cc_tools import CC1
+from cc_tools.cc1_sprite_set import CC1SpriteSet
 
 
-class CC1SpriteViewer(tk.Tk):
+class CC1SpritesetViewer(tk.Tk):
     def __init__(self):
         super().__init__()
         self.configure(bg='black')  # Set the background color
-        self.geometry("800x600")  # Set the window size to 800x600
+        self.geometry("300x600")  # Set the window size to 800x600
         self.title("CC1 Sprite Viewer")
-        self.show_secrets_var = tk.BooleanVar()
-        self.show_secrets_var.set(False)
 
-        self.available_sets = CC1SpriteSet.available_sprite_sets()
-        self.current_key = CC1.FLOOR
-        self.current_sprite = None
-        self.enum_members = sorted(list(CC1.valid()), key=lambda x: x.value)
-        self.file_menu = None
-        self.magnified_image_label = None
-        self.menu_bar = None
-        self.sprite_image_label = None
-        self.sprite_name_label = None
-        self.sprite_set = None
-        self.sprite_set_name = None
-        self.view_menu = None
+        self.sprite_sets = CC1SpriteSet.create_sprite_sets()
 
-        self.init_ui()
+        # Sort sprite sets by size
+        self.sorted_sprite_sets = sorted(self.sprite_sets.items(), key=lambda x: x[1].get_size_in_pixels())
 
-        # Must be after init_ui()
-        self.load_sprite_set("8x8")
+        self.setup_ui()
 
-    def init_ui(self):
-        self.menu_bar = Menu(self)
-        self.file_menu = Menu(self.menu_bar, tearoff=0)
+    def setup_ui(self):
+        list_frame = tk.Frame(self)
+        list_frame.pack(side="left", fill="y")
 
-        for set_name in self.available_sets:
-            self.file_menu.add_command(label=set_name,
-                                       command=lambda
-                                       n=set_name: self.load_sprite_set(n))
-        self.menu_bar.add_cascade(label="File",
-                                  menu=self.file_menu)  # submenu within a menu
-        self.config(menu=self.menu_bar)
+        scrollbar = tk.Scrollbar(list_frame)
+        scrollbar.pack(side="right", fill="y")
 
-        # Adding a View menu with a Toggle Secrets checkbutton
-        self.view_menu = Menu(self.menu_bar, tearoff=0)
-        self.view_menu.add_checkbutton(label="Show Secrets", onvalue=True,
-                                       offvalue=False,
-                                       variable=self.show_secrets_var,
-                                       command=self.update_sprite)
-        self.menu_bar.add_cascade(label="View", menu=self.view_menu)
+        self.listbox = tk.Listbox(list_frame, yscrollcommand=scrollbar.set)
+        for elem in CC1:
+            self.listbox.insert(tk.END, elem.name)
+        self.listbox.pack(side="left", fill="both", expand=True)
+        scrollbar.config(command=self.listbox.yview)
 
-        self.sprite_name_label = tk.Label(self, text="")
-        self.sprite_name_label.pack()
+        image_frame = tk.Frame(self, bg="black")
+        image_frame.pack(side="right", fill="both", expand=True)
 
-        self.sprite_image_label = tk.Label(self)
-        self.sprite_image_label.pack()
+        self.image_frames = []
+        for sprite_set_name, sprite_set in self.sorted_sprite_sets:
+            frame = tk.Frame(image_frame, bg='black')
+            frame.pack(side="top", fill="x")
 
-        self.magnified_image_label = tk.Label(self)
-        self.magnified_image_label.pack()
+            label_image = tk.Label(frame, bg="black")
+            label_image.pack(side="left")
 
-        self.bind("<Left>", self.previous_sprite)
-        self.bind("<Right>", self.next_sprite)
-        self.bind("<Up>", self.next_sprite_set)
-        self.bind("<Down>", self.previous_sprite_set)
-        self.bind('s', lambda event: self.toggle_secrets())
+            label_name = tk.Label(frame, text=sprite_set_name, bg="black", fg="white")
+            label_name.pack(side="right")
 
-    def toggle_secrets(self):
-        self.show_secrets_var.set(not self.show_secrets_var.get())
-        self.update_sprite()
+            self.image_frames.append((label_image, sprite_set))
 
-    def load_sprite_set(self, setname):
-        self.sprite_set = CC1SpriteSet.load_set_by_name(setname)
-        self.sprite_set_name = setname
-        self.update_sprite()
+        self.listbox.bind("<<ListboxSelect>>", self.update_images)
 
-    def update_sprite(self):
-        if self.sprite_set and self.current_key:
-            self.sprite_set.set_show_secrets(self.show_secrets_var.get())
+    def update_images(self, event):
+        if not self.listbox.curselection():
+            return
 
-            sprite = self.sprite_set.get_sprite(self.current_key)
-
-            self.sprite_name_label.config(text=str(self.current_key))
-
-            raw_image = ImageTk.PhotoImage(sprite)
-            self.sprite_image_label.config(image=raw_image)
-            self.sprite_image_label.image = raw_image
-
-            magnified_image = ImageTk.PhotoImage(
-                sprite.resize((sprite.width * 8, sprite.height * 8),
-                              Image.NEAREST))
-            self.magnified_image_label.config(image=magnified_image)
-            self.magnified_image_label.image = magnified_image
-
-    def next_sprite(self, event):
-        current_index = self.enum_members.index(self.current_key)
-        next_index = (current_index + 1) % len(self.enum_members)
-        self.current_key = self.enum_members[next_index]
-        self.update_sprite()
-
-    def previous_sprite(self, event):
-        current_index = self.enum_members.index(self.current_key)
-        prev_index = (current_index - 1) % len(self.enum_members)
-        self.current_key = self.enum_members[prev_index]
-        self.update_sprite()
-
-    def next_sprite_set(self, event):
-        current_index = self.available_sets.index(self.sprite_set_name)
-        next_index = (current_index + 1) % len(self.available_sets)
-        self.load_sprite_set(self.available_sets[next_index])
-
-    def previous_sprite_set(self, event):
-        current_index = self.available_sets.index(self.sprite_set_name)
-        prev_index = (current_index - 1) % len(self.available_sets)
-        self.load_sprite_set(self.available_sets[prev_index])
+        selected_key = self.listbox.get(self.listbox.curselection())
+        for label_image, sprite_set in self.image_frames:
+            pil_image = sprite_set.get_sprite(selected_key)
+            tk_image = ImageTk.PhotoImage(pil_image)
+            label_image.config(image=tk_image)
+            label_image.image = tk_image  # Keep a reference
 
 
 if __name__ == "__main__":
-    app = CC1SpriteViewer()
+    app = CC1SpritesetViewer()
     app.mainloop()

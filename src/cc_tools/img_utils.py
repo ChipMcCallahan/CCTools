@@ -1,7 +1,7 @@
 """Assorted PIL Image tranformation utils."""
 
 import importlib.resources
-from PIL import Image, ImageOps, ImageDraw, ImageFont
+from PIL import Image, ImageOps, ImageDraw, ImageFont, ImageEnhance
 
 RED = "RED"
 YELLOW = "YELLOW"
@@ -132,10 +132,10 @@ def compass_paste_16(image, direction):
 
     # Define paste positions based on direction
     paste_positions = {
-        "N": (8, 0),   # Centered on the north side
+        "N": (8, 0),  # Centered on the north side
         "E": (16, 8),  # Centered on the east side
         "S": (8, 16),  # Centered on the south side
-        "W": (0, 8)    # Centered on the west side
+        "W": (0, 8)  # Centered on the west side
     }
 
     if direction not in paste_positions:
@@ -252,59 +252,45 @@ def make_transparent(image, colors):
     return new_image
 
 
-def create_transparent_image(white_tile, black_tile):
+def apply_alpha_mask(base_image, alpha_mask):
     """
-    Creates a transparent image from two tiles: one on a white
-    background and one on a black background. Any pixel that is white in
-    the white image and black in the black image becomes transparent.
+    Replace the alpha channel of the base image with the alpha mask.
 
     Args:
-        white_tile (PIL.Image.Image): The tile image on a white background.
-        black_tile (PIL.Image.Image): The tile image on a black background.
-
-    Returns: PIL.Image.Image: A new image with specified pixels made
-    transparent.
-    """
-
-    # Ensure both images are in RGBA mode
-    white_tile = white_tile.convert("RGBA")
-    black_tile = black_tile.convert("RGBA")
-
-    width, height = white_tile.size
-    transparent_img = Image.new("RGBA", (width, height))
-
-    for y in range(height):
-        for x in range(width):
-            white_pixel = white_tile.getpixel((x, y))
-            black_pixel = black_tile.getpixel((x, y))
-
-            # Check if the pixel is white in white_tile and black in
-            # black_tile
-            if white_pixel[:3] == (255, 255, 255) and black_pixel[:3] == (
-                    0, 0, 0):
-                # Make the pixel fully transparent
-                alpha = 0
-            else:
-                # Keep the pixel from the white_tile and fully opaque
-                alpha = 255
-
-            new_pixel = (*white_pixel[:3], alpha)
-            transparent_img.putpixel((x, y), new_pixel)
-
-    return transparent_img
-
-
-def apply_transparent_circle_to_image(base_image):
-    """
-    Applies a transparent circle to an existing image. The transparency
-    decreases as one moves away from the center.
-
-    Args: base_image (PIL.Image.Image): The existing image to which the
-    transparent circle will be applied.
+        base_image (PIL.Image.Image): The base image in RGBA format.
+        alpha_mask (PIL.Image.Image): The alpha mask.
 
     Returns:
-    PIL.Image.Image: The image with the applied transparent circle.
+        PIL.Image.Image: The resulting image with the alpha channel replaced.
     """
+
+    # Convert the base image to 'RGBA' if it's not already
+    base_image = base_image.convert("RGBA")
+
+    # Convert the alpha mask to 'L' (grayscale) mode
+    alpha_mask = alpha_mask.convert("L")
+
+    # Split the base image into its R, G, B, and A channels
+    r, g, b, _ = base_image.split()
+
+    # Merge the R, G, B channels with the new alpha mask
+    result_img = Image.merge("RGBA", (r, g, b, alpha_mask))
+
+    return result_img
+
+
+def make_semi_transparent(base_image):
+    """
+        Applies a transparent square to an existing image. The transparency
+        increases exponentially as one moves closer to the center.
+
+        Args:
+            base_image (PIL.Image.Image): The existing image to which the
+            transparent square will be applied.
+
+        Returns:
+            PIL.Image.Image: The image with the applied transparent square.
+        """
     # Ensure base image is in RGBA mode
     base_image = base_image.convert("RGBA")
     image_size = base_image.size[0]  # Assuming the image is square
@@ -312,18 +298,18 @@ def apply_transparent_circle_to_image(base_image):
     # Create a new image for the alpha mask
     alpha_mask = Image.new("L", (image_size, image_size), 0)
 
-    # Center and radius for the circle
-    center = (image_size // 2, image_size // 2)
-    radius = image_size // 2
+    # Center for the square
+    center = (image_size / 2 - 0.5, image_size / 2 - 0.5)
+    max_distance = min(center)  # Maximum distance from center to corner
 
     for y in range(image_size):
         for x in range(image_size):
-            # Distance from the center
-            distance = ((x - center[0]) ** 2 + (y - center[1]) ** 2) ** 0.5
+            distance = max(abs(x - center[0]), abs(y - center[1]))
 
-            # Calculate the alpha value based on the distance. The alpha
-            # value increases as the distance from the center increases
-            alpha = int(255 * min(distance / radius, 1))
+            # Calculate the alpha value based on the distance, making it
+            # exponentially transparent as it gets closer to the center
+            alpha = int(255 * (
+                    distance / max_distance) ** 2)  # Exponential decrease
 
             # Set the pixel in the alpha mask
             alpha_mask.putpixel((x, y), alpha)
@@ -332,3 +318,80 @@ def apply_transparent_circle_to_image(base_image):
     base_image.putalpha(alpha_mask)
 
     return base_image
+
+
+def lighten_image(image, percentage):
+    """
+    Lighten an image by a certain percentage.
+
+    Args:
+        image (PIL.Image.Image): The image to lighten.
+        percentage (float): The percentage to lighten the image.
+                            0% means no change, 100% means pure white.
+
+    Returns:
+        PIL.Image.Image: The lightened image.
+    """
+
+    # Ensure percentage is in a valid range
+    if not 0 <= percentage <= 100:
+        raise ValueError("Percentage must be between 0 and 100")
+
+    # Calculate enhancement factor (1.0 means no change, 2.0 means double
+    # brightness)
+    factor = 1 + (percentage / 100)
+
+    # Create a brightness enhancer
+    enhancer = ImageEnhance.Brightness(image)
+
+    # Enhance the image
+    lightened_image = enhancer.enhance(factor)
+
+    return lightened_image
+
+
+def draw_directional_arrow(size, direction, arrow_color='red'):
+    """
+    Draw a directional arrow on an NxN tile with a transparent background.
+    The arrow takes up a quarter of the tile and is positioned on the edge.
+
+    Args:
+        size (int): The size of the NxN tile (in pixels).
+        direction (str): The direction of the arrow ('N', 'S', 'W', 'E').
+        arrow_color (str): The color of the arrow (default is 'red').
+
+    Returns:
+        PIL.Image.Image: The image with the drawn arrow.
+    """
+    # Create a blank image with a transparent background
+    image = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+
+    # Define the smaller arrow size and offset from center
+    arrow_size = size // 4
+    offset = size // 8
+
+    # Define points for the arrow based on the direction
+    if direction == 'N':
+        points = [(size // 2, offset),
+                  (size // 2 - arrow_size, offset + arrow_size),
+                  (size // 2 + arrow_size, offset + arrow_size)]
+    elif direction == 'S':
+        points = [(size // 2, size - offset),
+                  (size // 2 - arrow_size, size - offset - arrow_size),
+                  (size // 2 + arrow_size, size - offset - arrow_size)]
+    elif direction == 'W':
+        points = [(offset, size // 2),
+                  (offset + arrow_size, size // 2 - arrow_size),
+                  (offset + arrow_size, size // 2 + arrow_size)]
+    elif direction == 'E':
+        points = [(size - offset, size // 2),
+                  (size - offset - arrow_size, size // 2 - arrow_size),
+                  (size - offset - arrow_size, size // 2 + arrow_size)]
+    else:
+        raise ValueError("Invalid direction. Choose from 'N', 'S', 'W', 'E'.")
+
+    # Draw the arrow
+    draw.polygon(points, fill=arrow_color)
+
+    return image
