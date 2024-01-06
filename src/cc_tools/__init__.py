@@ -11,3 +11,5 @@ from .dat_handler import DATHandler
 from .c2m_handler import C2MHandler
 from .tws_handler import TWSHandler
 from .cc1_level_imager import CC1LevelImager
+from .cc1_sprite_set import CC1SpriteSet
+from .cc2_sprite_set import CC2SpriteSet
