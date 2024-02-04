@@ -21,6 +21,7 @@ ParsedDATLevel = namedtuple(
      "time",
      "chips",
      "hint",
+     "author",
      "password",
      "map",
      "trap_controls",
@@ -39,17 +40,14 @@ class DATConstants:
     def __init__(self):
         raise TypeError("Cannot create 'DATConstants' instances.")
 
-    ENCRYPTED_CHARS = [0xD8, 0xDB, 0xDA, 0xDD, 0xDC, 0xDF, 0xDE, 0xD1, 0xD0, 0xD3, 0xD2, 0xD5,
-                       0xD4, 0xD7, 0xD6, 0xC9, 0xC8, 0xCB, 0xCA, 0xCD, 0xCC, 0xCF, 0xCE, 0xC1,
-                       0xC0, 0xC3]
-
-    STANDARD_FIELDS = (3, 4, 5, 6, 7, 10)
+    STANDARD_FIELDS = (3, 4, 5, 6, 7, 9, 10)
 
     TITLE_FIELD = 3
     TRAPS_FIELD = 4
     CLONERS_FIELD = 5
     PASSWORD_FIELD = 6
     HINT_FIELD = 7
+    AUTHOR_FIELD = 9
     MOVEMENT_FIELD = 10
     STANDARD_FIELDS = (
         TITLE_FIELD,
@@ -57,6 +55,7 @@ class DATConstants:
         CLONERS_FIELD,
         PASSWORD_FIELD,
         HINT_FIELD,
+        AUTHOR_FIELD,
         MOVEMENT_FIELD
     )
 
@@ -134,7 +133,7 @@ class DATHandler:
             top = self.__parse_layer(self.bytes(self.short()))
             bottom = self.__parse_layer(self.bytes(self.short()))
 
-            title, password, hint = None, None, None
+            title, password, hint, author = None, None, None, None
             traps, cloners, movement = tuple(), tuple(), tuple()
             bytes_remaining = self.short()
             extra_fields = []
@@ -145,7 +144,7 @@ class DATHandler:
                 content = self.bytes(length)
                 bytes_remaining -= length + 2
                 if field == DATConstants.TITLE_FIELD:
-                    title = content[:-1].decode("latin-1")
+                    title = content[:-1].decode("windows-1252")
                 elif field == DATConstants.TRAPS_FIELD:
                     traps = self.__parse_traps(content)
                 elif field == DATConstants.CLONERS_FIELD:
@@ -153,15 +152,17 @@ class DATHandler:
                 elif field == DATConstants.PASSWORD_FIELD:
                     password = ''.join([chr(b ^ 0x99) for b in content[:-1]])
                 elif field == DATConstants.HINT_FIELD:
-                    hint = content[:-1].decode("latin-1")
+                    hint = content[:-1].decode("windows-1252")
                 elif field == DATConstants.MOVEMENT_FIELD:
                     movement = self.__parse_movement(content)
+                elif field == DATConstants.AUTHOR_FIELD:
+                    author = content[:-1].decode("windows-1252")
                 else:
                     logging.warning(
                         "Encountered Unexpected Field %s", str(field))
                     extra_fields.append((field, content))
 
-            return ParsedDATLevel(title, number, time, chips, hint, password,
+            return ParsedDATLevel(title, number, time, chips, hint, author, password,
                                   tuple(zip(top, bottom)), traps, cloners, movement,
                                   map_detail, tuple(field_numbers_in_order),
                                   tuple(extra_fields))
@@ -266,13 +267,15 @@ class DATHandler:
                 ordered_fields.append(DATConstants.PASSWORD_FIELD)
             if level.hint and DATConstants.HINT_FIELD not in ordered_fields:
                 ordered_fields.append(DATConstants.HINT_FIELD)
+            if level.author and DATConstants.AUTHOR_FIELD not in ordered_fields:
+                ordered_fields.append(DATConstants.AUTHOR_FIELD)
             if len(level.movement) > 0 and DATConstants.MOVEMENT_FIELD not in ordered_fields:
                 ordered_fields.append(DATConstants.MOVEMENT_FIELD)
 
             for field in ordered_fields:
                 if field == DATConstants.TITLE_FIELD and level.title:
                     writer_2.byte(field)
-                    title_bytes = level.title.encode('latin-1') + b'\x00'
+                    title_bytes = level.title.encode('windows-1252') + b'\x00'
                     writer_2.byte(len(title_bytes))
                     writer_2.bytes(title_bytes)
                 elif field == DATConstants.TRAPS_FIELD and len(level.trap_controls) > 0:
@@ -291,15 +294,20 @@ class DATHandler:
                             (k % 32, k // 32, v % 32, v // 32))
                 elif field == DATConstants.PASSWORD_FIELD and level.password:
                     writer_2.byte(field)
-                    password_bytes = DATHandler.Writer.encrypt(level.password.encode("latin-1"))
+                    password_bytes = DATHandler.Writer.encrypt(level.password.encode("windows-1252"))
                     password_bytes += b'\x00'
                     writer_2.byte(len(password_bytes))
                     writer_2.bytes(password_bytes)
                 elif field == DATConstants.HINT_FIELD and level.hint:
                     writer_2.byte(field)
-                    hint_bytes = level.hint.encode("latin-1") + b'\x00'
+                    hint_bytes = level.hint.encode("windows-1252") + b'\x00'
                     writer_2.byte(len(hint_bytes))
                     writer_2.bytes(hint_bytes)
+                elif field == DATConstants.AUTHOR_FIELD and level.author:
+                    writer_2.byte(field)
+                    author_bytes = level.author.encode("windows-1252") + b'\x00'
+                    writer_2.byte(len(author_bytes))
+                    writer_2.bytes(author_bytes)
                 elif field == DATConstants.MOVEMENT_FIELD and len(level.movement) > 0:
                     writer_2.byte(field)
                     writer_2.byte(2 * len(level.movement))
@@ -355,10 +363,9 @@ class DATHandler:
             """Encrypts a plain text password written in all caps."""
             writer = DATHandler.Writer()
             for c in input_to_encrypt:
-                if c < 65 or c > 90:
-                    raise f"password must be all caps, was {input_to_encrypt}"
-                index = c - int.from_bytes(b'A', "big")
-                writer.byte(DATConstants.ENCRYPTED_CHARS[index])
+                if c < 1 or c > 255:
+                    raise f"password must have all characters in the Windows-1252 encoding, was \"{input_to_encrypt}\", with a problem char of: f{chr(c)}"
+                writer.byte(c ^ 0x99)
             return writer.written()
 
         @staticmethod
@@ -368,11 +375,12 @@ class DATHandler:
                 level = level_or_levelset
                 title, number, time = level.title, 0, level.time
                 chips, hint, password = level.chips, level.hint, level.password
+                author = level.author
                 _map = tuple((cell.top.value, cell.bottom.value) for cell in level.map)
                 trap_controls = tuple((k, v) for k, v in level.traps.items())
                 clone_controls = tuple((k, v) for k, v in level.cloners.items())
                 movement = level.movement
-                return ParsedDATLevel(title, number, time, chips, hint, password, _map,
+                return ParsedDATLevel(title, number, time, chips, hint, author, password, _map,
                                       trap_controls,
                                       clone_controls, movement, None, None, None)
             if isinstance(level_or_levelset, CC1Levelset):
