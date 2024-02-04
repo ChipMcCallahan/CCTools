@@ -61,8 +61,8 @@ class CCBinary:
             return self.bio.read(n_bytes)
 
         def text(self, n_bytes):
-            """Read n bytes from IO and convert to latin-1."""
-            return self.bytes(n_bytes).decode("latin-1")
+            """Read n bytes from IO and convert to windows-1252."""
+            return self.bytes(n_bytes).decode("windows-1252")
 
         def size(self):
             """The total number of bytes in the reader."""

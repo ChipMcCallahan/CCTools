@@ -15,6 +15,7 @@ class CC1Level:
         self.chips = parsed.chips if parsed else 0
         self.hint = parsed.hint if parsed else ""
         self.password = parsed.password if parsed else ""
+        self.author = parsed.author if parsed else ""
         self.map = []
         for i in range(32 * 32):
             cell = CC1Cell()
