@@ -14,4 +14,4 @@ class TestParseOfficialReplays(unittest.TestCase):
         for tws_name in tws_path.iterdir():
             results = TWSHandler(tws_path / tws_name).decode()
             expected_length = 148 if "CC1-lynx" in str(tws_name) else 149
-            self.assertEqual(len(results["records"]), expected_length)
+            self.assertEqual(len(results.replays), expected_length)

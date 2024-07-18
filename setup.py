@@ -11,7 +11,8 @@ setup(
     package_data={
         'cc_tools': [
             'art/*/*',  # 2 levels deep
-            'sets/*/*',  # 2 levels deep
+            'sets/dat/*',
+            'sets/c2m/*/*',
             'replays/*'  # 1 level deep
         ]
     },
