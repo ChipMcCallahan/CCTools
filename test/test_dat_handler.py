@@ -14,15 +14,18 @@ class TestParseAndWriteOnOfficialSets(unittest.TestCase):
         """Test that we can parse DAT files and rewrite them with no changes."""
         dat_path = importlib.resources.files('cc_tools.sets.dat')
         sets = []
+
         for file in dat_path.iterdir():
-            if file.is_file():
-                dat_file_path = importlib.resources.files('cc_tools.sets.dat') / file.name
+            # Skip non-.dat files
+            if file.is_file() and file.name.lower().endswith('.dat'):
+                dat_file_path = dat_path / file.name  # same logic
                 with open(dat_file_path, 'rb') as f:
                     sets.append(f.read())
 
         self.assertLess(0, len(sets))
 
         for s in sets:
+            # Parse and rewrite checks
             parsed_and_written_set = DATHandler.write(DATHandler.parse(s, as_tuple=True))
             self.assertEqual(s, parsed_and_written_set)
 

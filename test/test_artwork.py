@@ -92,10 +92,15 @@ class Test8x8ArtworkPresent(unittest.TestCase):
     }
 
     def test_8x8(self):
-        """Test that all expected files exist."""
+        """Test that all expected files exist, excluding __init__.py."""
         art_path = importlib.resources.files('cc_tools.art.8x8')
-        actual = {f.name[:-4] for f in art_path.iterdir() if f.is_file()}
+        
+        # Exclude '__init__.py' from the actual set
+        actual = {f.name[:-4] for f in art_path.iterdir() if f.is_file() and f.name != '__init__.py'}
+        
         expected = self.img_prefixes
+        
         for missing in expected.difference(actual):
             logging.error("missing %s", missing)
+        
         self.assertEqual(expected, actual)

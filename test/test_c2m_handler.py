@@ -40,7 +40,7 @@ class TestC2MHandlerOnLocalLevels(unittest.TestCase):
         c2m_path = importlib.resources.files('cc_tools.sets.c2m')
 
         # flatten the list of lists using 'sum'
-        c2ms = sum([read_all_files(d) for d in c2m_path.iterdir() if d.is_file()], [])
+        c2ms = sum([read_all_files(d) for d in c2m_path.iterdir() if d.is_dir()], [])
 
         for c2m in c2ms:
             try:
