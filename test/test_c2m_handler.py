@@ -35,41 +35,79 @@ class TestC2MHandlerOnLocalLevels(unittest.TestCase):
         for i, packed in enumerate((packed_1, packed_2)):
             unpacked = C2MHandler.Parser.unpack(packed)
             repacked = C2MHandler.Packer.pack(unpacked)
-            self.assertEqual(packed, repacked, f"Unpack/Repack failed for local bytes packed_{i}.")
+            self.assertEqual(packed, repacked,
+                             f"Unpack/Repack failed for local bytes packed_{i}.")
 
         c2m_path = importlib.resources.files('cc_tools.sets.c2m')
 
         # flatten the list of lists using 'sum'
         c2ms = sum([read_all_files(d) for d in c2m_path.iterdir() if d.is_dir()], [])
 
-        for c2m in c2ms:
+        for c2m_bytes in c2ms:
             try:
-                parsed_level = C2MHandler.Parser.parse_c2m(c2m)
+                parsed_level = C2MHandler.Parser.parse_c2m(c2m_bytes)
             except ValueError as e:
-                logging.error("Error parsing level %s: %s", c2m, e)
-            if not parsed_level.packed_map:
-                logging.warning("%s does not have a packed map section.", parsed_level.title)
+                logging.error("Error parsing level bytes (size: %d): %s", len(c2m_bytes), e)
                 continue
 
-            unpacked = C2MHandler.Parser.unpack(parsed_level.packed_map)
-            repacked = C2MHandler.Packer.pack(unpacked)
-            reunpacked = C2MHandler.Parser.unpack(repacked)
+            # If the level has a packed map, test pack/unpack:
+            if parsed_level.packed_map:
+                unpacked_map = C2MHandler.Parser.unpack(parsed_level.packed_map)
+                repacked_map = C2MHandler.Packer.pack(unpacked_map)
+                re_unpacked_map = C2MHandler.Parser.unpack(repacked_map)
+                self.assertEqual(unpacked_map, re_unpacked_map,
+                                 f"Unpack/Repack map failed for {parsed_level.title}")
 
-            self.assertEqual(unpacked, reunpacked,
-                             f"Unpack/Repack map failed for {parsed_level.title}")
-
+            # Similarly for a packed replay:
             if parsed_level.packed_replay:
-                unpacked = C2MHandler.Parser.unpack(parsed_level.packed_replay)
-                repacked = C2MHandler.Packer.pack(unpacked)
-                reunpacked = C2MHandler.Parser.unpack(repacked)
-                self.assertEqual(unpacked, reunpacked,
+                unpacked_rpl = C2MHandler.Parser.unpack(parsed_level.packed_replay)
+                repacked_rpl = C2MHandler.Packer.pack(unpacked_rpl)
+                re_unpacked_rpl = C2MHandler.Parser.unpack(repacked_rpl)
+                self.assertEqual(unpacked_rpl, re_unpacked_rpl,
                                  f"Unpack/Repack replay failed for {parsed_level.title}")
+
+    def test_parse_write_parse(self):
+        """
+        Test that parsing a .c2m file, writing it back out, and then re-parsing
+        yields the same ParsedC2MLevel result.
+        """
+        c2m_path = importlib.resources.files('cc_tools.sets.c2m')
+        c2ms = sum([read_all_files(d) for d in c2m_path.iterdir() if d.is_dir()], [])
+
+        for idx, c2m_bytes in enumerate(c2ms):
+            try:
+                parsed_level = C2MHandler.Parser.parse_c2m(c2m_bytes)
+            except ValueError as e:
+                logging.error("Error parsing c2m (size: %d): %s", len(c2m_bytes), e)
+                continue
+
+            # Now write it back out
+            try:
+                c2m_rewritten = C2MHandler.Writer.write_c2m(parsed_level)
+            except Exception as e:
+                self.fail(f"Error writing c2m (index {idx}): {e}")
+
+            # Parse the just-written bytes again
+            try:
+                parsed_level_again = C2MHandler.Parser.parse_c2m(c2m_rewritten)
+            except Exception as e:
+                self.fail(f"Error re-parsing c2m after writing (index {idx}): {e}")
+
+            # Compare the two parsed objects
+            # Since ParsedC2MLevel is a namedtuple, direct equality check is usually OK.
+            self.assertEqual(
+                parsed_level, parsed_level_again,
+                f"Re-parsed level mismatch (index {idx}); title: {parsed_level.title}"
+            )
 
 
 def read_all_files(directory):
-    """Read all files in a directory."""
+    """Read all files in a directory and return their raw bytes."""
     files = []
-    for c2m in os.listdir(directory):
-        with open(os.path.join(directory, c2m), "rb") as f:
+    for c2m_name in os.listdir(directory):
+        full_path = os.path.join(directory, c2m_name)
+        if not os.path.isfile(full_path):
+            continue
+        with open(full_path, "rb") as f:
             files.append(f.read())
     return files

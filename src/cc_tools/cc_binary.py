@@ -34,6 +34,17 @@ class CCBinary:
             """Writes an arbitrary sequence of bytes to output."""
             self.bio.write(bytes_to_write)
 
+        def text(self, txt):
+            """
+            Writes a string to output, encoded as windows-1252.
+            The caller is responsible for writing the length beforehand.
+            """
+            try:
+                encoded = txt.encode("windows-1252")
+            except UnicodeEncodeError as e:
+                raise ValueError(f"Text contains characters not supported by windows-1252: {e}")
+            self.bytes(encoded)
+
         def written(self):
             """Returns all written bytes."""
             return self.bio.getvalue()
@@ -46,19 +57,31 @@ class CCBinary:
 
         def byte(self):
             """Read a byte from IO."""
-            return struct.unpack("<B", self.bio.read(1))[0]
+            byte = self.bio.read(1)
+            if len(byte) < 1:
+                raise EOFError("Unexpected end of data while reading a byte.")
+            return struct.unpack("<B", byte)[0]
 
         def short(self):
             """Read a short (2 bytes) from IO."""
-            return struct.unpack("<H", self.bio.read(2))[0]
+            short = self.bio.read(2)
+            if len(short) < 2:
+                raise EOFError("Unexpected end of data while reading a short.")
+            return struct.unpack("<H", short)[0]
 
         def long(self):
             """Read a long (4 bytes) from IO."""
-            return struct.unpack("<L", self.bio.read(4))[0]
+            long_bytes = self.bio.read(4)
+            if len(long_bytes) < 4:
+                raise EOFError("Unexpected end of data while reading a long.")
+            return struct.unpack("<L", long_bytes)[0]
 
         def bytes(self, n_bytes):
             """Read n bytes from IO."""
-            return self.bio.read(n_bytes)
+            data = self.bio.read(n_bytes)
+            if len(data) < n_bytes:
+                raise EOFError(f"Unexpected end of data while reading {n_bytes} bytes.")
+            return data
 
         def text(self, n_bytes):
             """Read n bytes from IO and convert to windows-1252."""

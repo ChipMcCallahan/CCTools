@@ -181,7 +181,137 @@ class C2MHandler:
             return writer.written()
 
     class Writer(CCBinary.Writer):
-        """Writes to C2M format."""
+        """
+        Writes a ParsedC2MLevel back into raw bytes in C2M format.
+
+        Usage:
+            raw_bytes = C2MHandler.Writer.write_c2m(parsed_level)
+        """
+
+        @staticmethod
+        def write_c2m(parsed_level: ParsedC2MLevel) -> bytes:
+            """
+            Given a ParsedC2MLevel namedtuple, write the data in C2M format and return raw bytes.
+            """
+            writer = C2MHandler.Writer()
+            # Convert namedtuple -> dict, so we can look up fields easily by ParsedField.
+            # e.g. parts[C2MConstants.ParsedField.TITLE], etc.
+            parts = parsed_level._asdict()
+
+            # 1) Write out text fields: FILE_VERSION, LOCK, TITLE, AUTHOR, EDITOR_VERSION, CLUE, NOTE
+            #    For each of these, if not None, write section tag + length + text data.
+            for section_tag, parsed_field in C2MConstants.FIELD_MAP.items():
+                if section_tag in C2MConstants.TEXT_FIELDS:
+                    val = parts[parsed_field.value]
+                    if val is not None:
+                        writer.bytes(section_tag)
+                        writer.long(len(val))
+                        writer.bytes(val.encode('windows-1252'))
+
+            # 2) Write out byte fields: MAP, PACKED_MAP, KEY, REPLAY, PACKED_REPLAY
+            #    If present, write section tag + length + raw bytes.
+            for section_tag, parsed_field in C2MConstants.FIELD_MAP.items():
+                if section_tag in C2MConstants.BYTE_FIELDS:
+                    val = parts[parsed_field.value]
+                    if val is not None:
+                        writer.bytes(section_tag)
+                        writer.long(len(val))
+                        writer.bytes(val)
+
+            # 3) Write "OPTIONS" if we have any of the time/editor window/hide map bits, etc.
+            #    The parser reads them all in a single chunk. We'll do the same in reverse:
+            #    accumulate them into a sub-writer, measure length, then write it.
+            #    The fields come in a specific order:
+            #       short  -> time
+            #       byte   -> editor_window
+            #       byte   -> verified_replay
+            #       byte   -> hide_map
+            #       byte   -> read_only_option
+            #       bytes(16) -> replay_hash
+            #       byte   -> hide_logic
+            #       byte   -> cc1_boots
+            #       byte   -> blob_patterns
+            #
+            #    If you only want to write them if ANY are set, conditionally do so. Or always write it.
+            #    The parser logic uses `read < length`, so partial data is possible. Typically though,
+            #    if a field is None, we skip it, so the length is shortened.
+
+            subwriter = C2MHandler.Writer()
+            bytes_written = 0
+
+            # TIME (2 bytes, short)
+            time_val = parts[C2MConstants.ParsedField.TIME.value]
+            if time_val is not None:
+                subwriter.short(time_val)
+                bytes_written += 2
+
+            # EDITOR_WINDOW (1 byte)
+            editor_window = parts[C2MConstants.ParsedField.EDITOR_WINDOW.value]
+            if editor_window is not None:
+                subwriter.byte(editor_window)
+                bytes_written += 1
+
+            # VERIFIED_REPLAY (1 byte)
+            verified_replay = parts[C2MConstants.ParsedField.VERIFIED_REPLAY.value]
+            if verified_replay is not None:
+                subwriter.byte(verified_replay)
+                bytes_written += 1
+
+            # HIDE_MAP (1 byte)
+            hide_map = parts[C2MConstants.ParsedField.HIDE_MAP.value]
+            if hide_map is not None:
+                subwriter.byte(hide_map)
+                bytes_written += 1
+
+            # READ_ONLY_OPTION (1 byte)
+            read_only_option = parts[C2MConstants.ParsedField.READ_ONLY_OPTION.value]
+            if read_only_option is not None:
+                subwriter.byte(read_only_option)
+                bytes_written += 1
+
+            # REPLAY_HASH (16 bytes)
+            replay_hash = parts[C2MConstants.ParsedField.REPLAY_HASH.value]
+            if replay_hash is not None:
+                # Expect 16 bytes
+                subwriter.bytes(replay_hash)
+                bytes_written += 16
+
+            # HIDE_LOGIC (1 byte)
+            hide_logic = parts[C2MConstants.ParsedField.HIDE_LOGIC.value]
+            if hide_logic is not None:
+                subwriter.byte(hide_logic)
+                bytes_written += 1
+
+            # CC1_BOOTS (1 byte)
+            cc1_boots = parts[C2MConstants.ParsedField.CC1_BOOTS.value]
+            if cc1_boots is not None:
+                subwriter.byte(cc1_boots)
+                bytes_written += 1
+
+            # BLOB_PATTERNS (1 byte)
+            blob_patterns = parts[C2MConstants.ParsedField.BLOB_PATTERNS.value]
+            if blob_patterns is not None:
+                subwriter.byte(blob_patterns)
+                bytes_written += 1
+
+            # If we wrote anything at all, then we have an OPTIONS section:
+            if bytes_written > 0:
+                writer.bytes(C2MConstants.OPTIONS)
+                writer.long(bytes_written)
+                writer.bytes(subwriter.written())
+
+            # 4) If there's a separate read-only chunk, the parser checks that length == 0.
+            #    Typically, you'd only write this if parts[ParsedField.READ_ONLY] is True, etc.
+            #    Here, we check if read_only_option is set to 1 or something.
+            #    You can define your own logic based on how you interpret "read_only".
+            if parts[C2MConstants.ParsedField.READ_ONLY.value]:
+                writer.bytes(C2MConstants.READ_ONLY)
+                writer.long(0)
+
+            # 5) Finally, write "END " to mark the end of the file
+            writer.bytes(C2MConstants.END)
+
+            return writer.written()
 
     class Packer:
         """Packs or unpacks according to C2M compression rules."""
