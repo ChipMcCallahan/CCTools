@@ -276,7 +276,7 @@ class CC2(Enum):
         :return: A set of CC2 members that have hardcoded directions in their names.
         :rtype: set
         """
-        return CC2.ice().union(CC2.forces()).union(CC2.swivels()).difference({CC2.FORCE_RANDOM, CC2.ICE})
+        return cls.ice() | cls.forces() | cls.swivels() - {cls.FORCE_RANDOM, cls.ICE}
 
     @classmethod
     def values_with_hardcoded_states(cls):
@@ -287,7 +287,7 @@ class CC2(Enum):
         :return: A set of CC2 members that may toggle between on/off or similar states.
         :rtype: set
         """
-        return CC2.switches().union(CC2.toggles()).union(CC2.flame_jets()).union(CC2.toggle_chips())
+        return cls.switches() | cls.toggles() | cls.flame_jets() | cls.toggle_chips()
 
     @classmethod
     def ice(cls):
@@ -318,7 +318,7 @@ class CC2(Enum):
         :return: A set of walls.
         :rtype: set
         """
-        return {cls.WALL, cls.STEEL_WALL, cls.SOLID_GREEN_WALL, cls.SOLID_BLUE_WALL}.union(cls.invisible_walls())
+        return {cls.WALL, cls.STEEL_WALL, cls.SOLID_GREEN_WALL, cls.SOLID_BLUE_WALL} | cls.invisible_walls()
 
     @classmethod
     def panels(cls):
@@ -363,7 +363,7 @@ class CC2(Enum):
         :return: A set containing all mobile CC2 tiles.
         :rtype: set
         """
-        return cls.monsters().union(cls.blocks()).union(cls.players())
+        return cls.monsters() | cls.blocks() | cls.players()
 
     @classmethod
     def toggle_chips(cls):
@@ -394,7 +394,7 @@ class CC2(Enum):
         :return: A set containing GREEN_CHIP, GREEN_BOMB, IC_CHIP, EXTRA_IC_CHIP.
         :rtype: set
         """
-        return cls.toggle_chips().union(cls.ic_chips())
+        return cls.toggle_chips() | cls.ic_chips()
 
     @classmethod
     def swivels(cls):
@@ -479,7 +479,7 @@ class CC2(Enum):
         :return: A set of pickup tiles.
         :rtype: set
         """
-        return cls.keys().union(cls.tools()).union(cls.flags()).union(cls.time_pickups()).union(cls.bombs())
+        return cls.keys() | cls.tools() | cls.flags() | cls.time_pickups() | cls.bombs()
 
     @classmethod
     def blue_walls(cls):
@@ -520,7 +520,7 @@ class CC2(Enum):
         :return: A set containing blue walls, green walls, and invisible walls.
         :rtype: set
         """
-        return cls.blue_walls().union(cls.green_walls()).union(cls.invisible_walls())
+        return cls.blue_walls() | cls.green_walls() | cls.invisible_walls()
 
     @classmethod
     def switches(cls):
@@ -554,7 +554,7 @@ class CC2(Enum):
         :return: A set containing both buttons and switches.
         :rtype: set
         """
-        return cls.buttons().union(cls.switches())
+        return cls.buttons() | cls.switches()
 
     @classmethod
     def purple_toggles(cls):
@@ -594,7 +594,7 @@ class CC2(Enum):
         :return: A set of toggle floor/wall tiles.
         :rtype: set
         """
-        return cls.purple_toggles().union(cls.green_toggles())
+        return cls.purple_toggles() | cls.green_toggles()
 
     @classmethod
     def teleports(cls):
@@ -687,7 +687,7 @@ class CC2(Enum):
         :return: A set of all mob tiles.
         :rtype: set
         """
-        return cls.mobs().union(cls.invalid_mobs())
+        return cls.mobs() | cls.invalid_mobs()
 
     @classmethod
     def modifiers(cls):
