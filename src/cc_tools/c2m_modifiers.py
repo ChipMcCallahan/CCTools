@@ -75,7 +75,7 @@ ARROW_MAP_INV = {v: k for k, v in ARROW_MAP.items()}  # e.g. {"↑": 0x1C, "→"
 
 class C2MModifiers:
     @staticmethod
-    def parse(tile_id: CC2, value: bytes) -> Dict[str, Any]:
+    def parse_modifier(tile_id: CC2, value: bytes) -> Dict[str, Any]:
         """
         Parse the modifier bytes for the given tile (tile_id) and return
         a dictionary containing the relevant information.
@@ -209,7 +209,7 @@ class C2MModifiers:
         return data
 
     @staticmethod
-    def build(tile_id: CC2, data: Dict[str, Any]) -> bytes:
+    def build_modifier(tile_id: CC2, data: Dict[str, Any]) -> bytes:
         """
         Given a tile id and a dictionary of fields (like the output of parse),
         build the corresponding bytes (1 or 2) for the tile's modifier.
@@ -366,3 +366,74 @@ class C2MModifiers:
 
         else:
             raise ValueError(f"Cannot build modifier for tile with id={tile_id}")
+
+    @staticmethod
+    def parse_direction(data: bytes) -> str:
+        """Parse a single-byte direction (0=N,1=E,2=S,3=W)."""
+        assert len(data) == 1, "Direction byte must be exactly 1 byte"
+        val = data[0]
+        if val not in range(4):
+            raise ValueError(f"Invalid direction byte {val}")
+        return Direction(val).name  # "N", "E", "S", "W"
+
+    @staticmethod
+    def build_direction(direction_str: str) -> bytes:
+        """Build a single-byte direction from 'N','E','S','W'."""
+        try:
+            return bytes([Direction[direction_str].value])
+        except KeyError:
+            raise ValueError(f"Invalid direction string '{direction_str}'")
+
+    @staticmethod
+    def parse_thinwall_canopy(data: bytes) -> str:
+        """
+        Parse a single-byte thin wall/canopy bitmask.
+          - Bits: 0x1(N),0x2(E),0x4(S),0x8(W),0x10(Canopy).
+          - Returns e.g. "NWC".
+        """
+        assert len(data) == 1, "Thin wall/canopy bitmask must be exactly 1 byte"
+        val = data[0]
+        parts = []
+        if val & 0x01: parts.append("N")
+        if val & 0x02: parts.append("E")
+        if val & 0x04: parts.append("S")
+        if val & 0x08: parts.append("W")
+        if val & 0x10: parts.append("C")
+        return "".join(parts)
+
+    @staticmethod
+    def build_thinwall_canopy(walls_str: str) -> bytes:
+        """Inverse of parse_thinwall_canopy, e.g. "NWC" -> b'\x19'."""
+        val = 0
+        if "N" in walls_str: val |= 0x01
+        if "E" in walls_str: val |= 0x02
+        if "S" in walls_str: val |= 0x04
+        if "W" in walls_str: val |= 0x08
+        if "C" in walls_str: val |= 0x10
+        return bytes([val])
+
+    @staticmethod
+    def parse_dblock_arrows(data: bytes) -> str:
+        """
+        Parse a single-byte directional block bitmask:
+          - Bits: 0x1(N),0x2(E),0x4(S),0x8(W).
+          - Returns e.g. "NW".
+        """
+        assert len(data) == 1, "Directional block bitmask must be exactly 1 byte"
+        val = data[0]
+        parts = []
+        if val & 0x01: parts.append("N")
+        if val & 0x02: parts.append("E")
+        if val & 0x04: parts.append("S")
+        if val & 0x08: parts.append("W")
+        return "".join(parts)
+
+    @staticmethod
+    def build_dblock_arrows(arrows_str: str) -> bytes:
+        """Inverse of parse_dblock_arrows, e.g. "NW" -> b'\x09'."""
+        val = 0
+        if "N" in arrows_str: val |= 0x01
+        if "E" in arrows_str: val |= 0x02
+        if "S" in arrows_str: val |= 0x04
+        if "W" in arrows_str: val |= 0x08
+        return bytes([val])
