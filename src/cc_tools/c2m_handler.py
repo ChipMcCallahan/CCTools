@@ -1,4 +1,39 @@
-"""Classes for retrieving, parsing, and writing C2M files."""
+"""
+C2M Handler
+-----------
+
+This module provides classes and utilities for working with C2M files, which are part
+of the Chip's Challenge 2 (CC2) file format ecosystem. It includes functionality for
+parsing (reading) C2M data, writing (assembling) it back into C2M format, and
+optionally fetching levelsets from the Gliderbot service.
+
+Usage Overview:
+
+    from your_project.c2m_handler import C2MHandler, ParsedC2MLevel
+
+    # Reading (Parsing) a C2M file:
+    with open("some_level.c2m", "rb") as f:
+        raw_data = f.read()
+    parsed_level = C2MHandler.Parser.parse_c2m(raw_data)
+
+    # Writing (Assembling) back into C2M format:
+    raw_data_out = C2MHandler.Writer.write_c2m(parsed_level)
+    with open("some_level_out.c2m", "wb") as f:
+        f.write(raw_data_out)
+
+    # Packing and Unpacking with C2M compression:
+    packed_bytes = C2MHandler.Packer.pack(unpacked_bytes)
+    unpacked_bytes = C2MHandler.Parser.unpack(packed_bytes)
+
+Classes:
+- C2MConstants
+- ParsedC2MLevel, ParsedC2MLevelset
+- C2MHandler
+  - Parser
+  - Writer
+  - Packer
+"""
+
 from collections import defaultdict, namedtuple
 from enum import Enum
 
@@ -8,14 +43,27 @@ GLIDERBOT_URL = "https://bitbusters.club/gliderbot/sets/cc2/"
 
 
 class C2MConstants:
-    """Constants for working with C2M files."""
+    """
+    Constants and enumerations for working with C2M files.
 
-    # pylint: disable=too-few-public-methods
+    This class contains:
+    - A ParsedField Enum representing logically parsed fields in a CC2 level.
+    - Raw byte tags used in C2M files (e.g., b"LOCK", b"AUTH", etc.).
+    - Helpful sets (TEXT_FIELDS, BYTE_FIELDS) for classifying which fields
+      belong to text data vs. binary data.
+    """
+
     def __init__(self):
+        """
+        This class is not meant to be instantiated.
+        """
         raise TypeError("Cannot create 'C2MConstants' instances.")
 
     class ParsedField(Enum):
-        """Enumeration of parsed CC2 fields to store."""
+        """
+        Enumeration of parsed CC2 fields to store.
+        Each enum member corresponds to a known field in the C2M file format.
+        """
         FILE_VERSION = "file_version"
         LOCK = "lock"
         TITLE = "title"
@@ -46,6 +94,7 @@ class C2MConstants:
         NAME = "name"
         SAVE = "save"
 
+    # Tag markers in the binary C2M file
     END = b"END "
     FILE_VERSION = b"CC2M"
     LOCK = b"LOCK"
@@ -61,9 +110,14 @@ class C2MConstants:
     REPLAY = b"REPL"
     PACKED_REPLAY = b"PRPL"
     READ_ONLY = b"RDNY"
+
+    # Classification of which fields are treated as text vs. raw bytes
     TEXT_FIELDS = frozenset(
-        (FILE_VERSION, LOCK, TITLE, AUTHOR, EDITOR_VERSION, CLUE, NOTE))
+        (FILE_VERSION, LOCK, TITLE, AUTHOR, EDITOR_VERSION, CLUE, NOTE)
+    )
     BYTE_FIELDS = frozenset((MAP, PACKED_MAP, KEY, REPLAY, PACKED_REPLAY))
+
+    # Mapping from raw byte tags -> ParsedField enum
     FIELD_MAP = {
         FILE_VERSION: ParsedField.FILE_VERSION,
         LOCK: ParsedField.LOCK,
@@ -80,6 +134,7 @@ class C2MConstants:
     }
 
 
+# Named tuples for storing parsed information
 ParsedC2MLevel = namedtuple("ParsedC2MLevel", tuple(f.value for f in C2MConstants.ParsedField))
 
 ParsedC2MLevelset = namedtuple(
@@ -87,102 +142,194 @@ ParsedC2MLevelset = namedtuple(
     (
         "name",
         "levels",
-        "c2g"
-    )
+        "c2g",
+    ),
 )
 
 
 class C2MHandler:
-    """Class for retrieving, parsing, and writing C2M files."""
+    """
+    Primary class for working with C2M files, providing:
+    - Retrieval from Gliderbot (if needed).
+    - Parsing to and from in-memory representations.
+    - Packing/unpacking using C2M compression.
+    """
 
-    # pylint: disable=too-few-public-methods
     def __init__(self):
+        """
+        This class is not meant to be instantiated directly.
+        """
         raise TypeError("Cannot create 'C2MHandler' instances.")
 
     @staticmethod
     def fetch_set_names_from_gliderbot():
-        """Fetch a tuple of all available CC2 sets from Gliderbot."""
+        """
+        Fetch a tuple of all available CC2 sets from Gliderbot.
+        (Not Implemented)
+        """
+        # Implementation could go here, e.g.:
+        # response = requests.get(GLIDERBOT_URL + 'sets.json')
+        # return tuple(response.json())
+        pass
 
     @staticmethod
     def fetch_set_from_gliderbot(levelset):
-        """Fetches a CC2 levelset from Gliderbot."""
+        """
+        Fetches a CC2 levelset from Gliderbot.
+        (Not Implemented)
+
+        :param levelset: The name of the levelset to fetch.
+        """
+        # Example:
+        # url = f"{GLIDERBOT_URL}{levelset}.c2m"
+        # response = requests.get(url)
+        # return response.content
+        pass
 
     class Parser(CCBinary.Reader):
-        """Class that parses raw bytes in C2M format."""
+        """
+        A parser for reading C2M data from raw bytes.
+
+        Inherits from CCBinary.Reader to provide low-level methods:
+        - bytes(n)
+        - text(n)
+        - long()
+        - short()
+        - byte()
+        - etc.
+
+        Provides two main functionalities:
+        1. parse_c2m(raw_bytes): Parse the entire C2M file structure into a
+           ParsedC2MLevel namedtuple.
+        2. unpack(packed_bytes): Unpack (decompress) data that was packed
+           using C2M compression.
+        """
 
         @staticmethod
-        def parse_c2m(raw_bytes):
-            """Parses raw bytes in C2M format into elements of a CC2 level."""
-            # pylint: disable=too-many-branches
+        def parse_c2m(raw_bytes) -> ParsedC2MLevel:
+            """
+            Parse raw bytes in C2M format into elements of a CC2 level.
+
+            :param raw_bytes: The raw bytes of the C2M file.
+            :return: A ParsedC2MLevel namedtuple with parsed fields.
+            :raises ValueError: If an unexpected section tag is encountered.
+            """
             parser = C2MHandler.Parser(raw_bytes)
             parts = defaultdict(lambda: None)
+
+            # Read 4-byte section tags until we encounter the 'END ' tag
             section = parser.bytes(4)
             while section != C2MConstants.END:
                 length = parser.long()
+
                 if section in C2MConstants.TEXT_FIELDS:
+                    # Read a text field
                     parts[C2MConstants.FIELD_MAP[section]] = parser.text(length)
                 elif section in C2MConstants.BYTE_FIELDS:
+                    # Read a raw byte field
                     parts[C2MConstants.FIELD_MAP[section]] = parser.bytes(length)
                 elif section == C2MConstants.OPTIONS:
-                    read = 0
-                    if read < length:
+                    # OPTIONS field is read in multiple smaller pieces
+                    read_so_far = 0
+                    if read_so_far < length:
                         parts[C2MConstants.ParsedField.TIME] = parser.short()
-                        read += 2
-                    if read < length:
+                        read_so_far += 2
+                    if read_so_far < length:
                         parts[C2MConstants.ParsedField.EDITOR_WINDOW] = parser.byte()
-                        read += 1
-                    if read < length:
+                        read_so_far += 1
+                    if read_so_far < length:
                         parts[C2MConstants.ParsedField.VERIFIED_REPLAY] = parser.byte()
-                        read += 1
-                    if read < length:
+                        read_so_far += 1
+                    if read_so_far < length:
                         parts[C2MConstants.ParsedField.HIDE_MAP] = parser.byte()
-                        read += 1
-                    if read < length:
+                        read_so_far += 1
+                    if read_so_far < length:
                         parts[C2MConstants.ParsedField.READ_ONLY_OPTION] = parser.byte()
-                        read += 1
-                    if read < length:
+                        read_so_far += 1
+                    if read_so_far < length:
                         parts[C2MConstants.ParsedField.REPLAY_HASH] = parser.bytes(16)
-                        read += 16
-                    if read < length:
+                        read_so_far += 16
+                    if read_so_far < length:
                         parts[C2MConstants.ParsedField.HIDE_LOGIC] = parser.byte()
-                        read += 1
-                    if read < length:
+                        read_so_far += 1
+                    if read_so_far < length:
                         parts[C2MConstants.ParsedField.CC1_BOOTS] = parser.byte()
-                        read += 1
-                    if read < length:
+                        read_so_far += 1
+                    if read_so_far < length:
                         parts[C2MConstants.ParsedField.BLOB_PATTERNS] = parser.byte()
-                        read += 1
-                    assert read == length
+                        read_so_far += 1
+
+                    assert read_so_far == length, (
+                        f"OPTIONS section length mismatch: "
+                        f"expected {length}, read {read_so_far}"
+                    )
+
                 elif section == C2MConstants.READ_ONLY:
-                    assert length == 0
+                    # READ_ONLY has length == 0
+                    assert length == 0, (
+                        "READ_ONLY section must have length 0, "
+                        f"got {length} instead."
+                    )
+
                 else:
-                    raise ValueError(f"Unexpected section {section}. Parts are {parts}.")
+                    # Unexpected section
+                    raise ValueError(
+                        f"Unexpected section '{section}'. Current parts: {parts}."
+                    )
+
                 section = parser.bytes(4)
-            return ParsedC2MLevel(*tuple(parts[f] for f in C2MConstants.ParsedField))
+
+            # Return a namedtuple in the same order as C2MConstants.ParsedField
+            return ParsedC2MLevel(*(parts[field] for field in C2MConstants.ParsedField))
 
         @staticmethod
-        def unpack(packed_bytes):
-            """Unpacks according to C2M compression rules."""
+        def unpack(packed_bytes: bytes) -> bytes:
+            """
+            Unpacks data from packed C2M format (C2M compression).
+
+            :param packed_bytes: Data compressed using C2M compression rules.
+            :return: Uncompressed data as raw bytes.
+            """
             parser = C2MHandler.Parser(packed_bytes)
             writer = C2MHandler.Writer()
+
+            # The first two bytes represent the uncompressed length
             uncompressed_length = parser.short()
+
             while len(writer.written()) < uncompressed_length:
                 n = parser.byte()
-                if n <= 0x7f:  # Data block
+                if n <= 0x7F:
+                    # Data block: read n raw bytes
                     writer.bytes(parser.bytes(n))
-                else:  # Back Reference block
+                else:
+                    # Back Reference block
                     count = n - 0x80
                     offset = parser.byte()
-                    bytes_to_copy = writer.written()[-offset:]
-                    substring = bytes_to_copy
-                    while len(substring) < count:
-                        substring += bytes_to_copy
-                    writer.bytes(substring[:count])
+
+                    # The 'offset' indicates how far back to read
+                    # from the already-written data
+                    previously_written = writer.written()[-offset:]
+                    chunk = previously_written
+
+                    # Ensure the chunk covers 'count' bytes
+                    while len(chunk) < count:
+                        chunk += previously_written
+
+                    writer.bytes(chunk[:count])
+
             return writer.written()
 
     class Writer(CCBinary.Writer):
         """
-        Writes a ParsedC2MLevel back into raw bytes in C2M format.
+        Writer for assembling a ParsedC2MLevel back into raw C2M bytes.
+
+        Inherits from CCBinary.Writer, which provides methods:
+        - bytes(data: bytes)
+        - text(s: str, encoding: str = 'windows-1252')
+        - long(val: int)
+        - short(val: int)
+        - byte(val: int)
+        - etc.
 
         Usage:
             raw_bytes = C2MHandler.Writer.write_c2m(parsed_level)
@@ -191,216 +338,238 @@ class C2MHandler:
         @staticmethod
         def write_c2m(parsed_level: ParsedC2MLevel) -> bytes:
             """
-            Given a ParsedC2MLevel namedtuple, write the data in C2M format and return raw bytes.
+            Given a ParsedC2MLevel namedtuple, assemble the data into
+            valid C2M format and return the raw bytes.
+
+            :param parsed_level: A ParsedC2MLevel namedtuple containing
+                                 the fields of a CC2 level.
+            :return: Raw bytes conforming to the C2M file specification.
             """
             writer = C2MHandler.Writer()
-            # Convert namedtuple -> dict, so we can look up fields easily by ParsedField.
-            # e.g. parts[C2MConstants.ParsedField.TITLE], etc.
-            parts = parsed_level._asdict()
+            parts_dict = parsed_level._asdict()  # Convert namedtuple -> dict
 
-            # 1) Write out text fields: FILE_VERSION, LOCK, TITLE, AUTHOR, EDITOR_VERSION, CLUE, NOTE
-            #    For each of these, if not None, write section tag + length + text data.
+            # 1) Write out text fields (FILE_VERSION, LOCK, TITLE, AUTHOR, EDITOR_VERSION, CLUE, NOTE)
             for section_tag, parsed_field in C2MConstants.FIELD_MAP.items():
                 if section_tag in C2MConstants.TEXT_FIELDS:
-                    val = parts[parsed_field.value]
-                    if val is not None:
+                    value = parts_dict[parsed_field.value]
+                    if value is not None:
                         writer.bytes(section_tag)
-                        writer.long(len(val))
-                        writer.bytes(val.encode('windows-1252'))
+                        writer.long(len(value))
+                        writer.bytes(value.encode("windows-1252"))
 
-            # 2) Write out byte fields: MAP, PACKED_MAP, KEY, REPLAY, PACKED_REPLAY
-            #    If present, write section tag + length + raw bytes.
+            # 2) Write out byte fields (MAP, PACKED_MAP, KEY, REPLAY, PACKED_REPLAY)
             for section_tag, parsed_field in C2MConstants.FIELD_MAP.items():
                 if section_tag in C2MConstants.BYTE_FIELDS:
-                    val = parts[parsed_field.value]
-                    if val is not None:
+                    value = parts_dict[parsed_field.value]
+                    if value is not None:
                         writer.bytes(section_tag)
-                        writer.long(len(val))
-                        writer.bytes(val)
+                        writer.long(len(value))
+                        writer.bytes(value)
 
-            # 3) Write "OPTIONS" if we have any of the time/editor window/hide map bits, etc.
-            #    The parser reads them all in a single chunk. We'll do the same in reverse:
-            #    accumulate them into a sub-writer, measure length, then write it.
-            #    The fields come in a specific order:
-            #       short  -> time
-            #       byte   -> editor_window
-            #       byte   -> verified_replay
-            #       byte   -> hide_map
-            #       byte   -> read_only_option
-            #       bytes(16) -> replay_hash
-            #       byte   -> hide_logic
-            #       byte   -> cc1_boots
-            #       byte   -> blob_patterns
-            #
-            #    If you only want to write them if ANY are set, conditionally do so. Or always write it.
-            #    The parser logic uses `read < length`, so partial data is possible. Typically though,
-            #    if a field is None, we skip it, so the length is shortened.
-
+            # 3) Write the OPTIONS section (time, editor_window, verified_replay, etc.) if needed
             subwriter = C2MHandler.Writer()
             bytes_written = 0
 
-            # TIME (2 bytes, short)
-            time_val = parts[C2MConstants.ParsedField.TIME.value]
-            if time_val is not None:
-                subwriter.short(time_val)
-                bytes_written += 2
+            def _append_short_if_not_none(field):
+                nonlocal bytes_written
+                val = parts_dict[field.value]
+                if val is not None:
+                    subwriter.short(val)
+                    bytes_written += 2
 
-            # EDITOR_WINDOW (1 byte)
-            editor_window = parts[C2MConstants.ParsedField.EDITOR_WINDOW.value]
-            if editor_window is not None:
-                subwriter.byte(editor_window)
-                bytes_written += 1
+            def _append_byte_if_not_none(field):
+                nonlocal bytes_written
+                val = parts_dict[field.value]
+                if val is not None:
+                    subwriter.byte(val)
+                    bytes_written += 1
 
-            # VERIFIED_REPLAY (1 byte)
-            verified_replay = parts[C2MConstants.ParsedField.VERIFIED_REPLAY.value]
-            if verified_replay is not None:
-                subwriter.byte(verified_replay)
-                bytes_written += 1
-
-            # HIDE_MAP (1 byte)
-            hide_map = parts[C2MConstants.ParsedField.HIDE_MAP.value]
-            if hide_map is not None:
-                subwriter.byte(hide_map)
-                bytes_written += 1
-
-            # READ_ONLY_OPTION (1 byte)
-            read_only_option = parts[C2MConstants.ParsedField.READ_ONLY_OPTION.value]
-            if read_only_option is not None:
-                subwriter.byte(read_only_option)
-                bytes_written += 1
+            # TIME (short)
+            _append_short_if_not_none(C2MConstants.ParsedField.TIME)
+            # EDITOR_WINDOW (byte)
+            _append_byte_if_not_none(C2MConstants.ParsedField.EDITOR_WINDOW)
+            # VERIFIED_REPLAY (byte)
+            _append_byte_if_not_none(C2MConstants.ParsedField.VERIFIED_REPLAY)
+            # HIDE_MAP (byte)
+            _append_byte_if_not_none(C2MConstants.ParsedField.HIDE_MAP)
+            # READ_ONLY_OPTION (byte)
+            _append_byte_if_not_none(C2MConstants.ParsedField.READ_ONLY_OPTION)
 
             # REPLAY_HASH (16 bytes)
-            replay_hash = parts[C2MConstants.ParsedField.REPLAY_HASH.value]
+            replay_hash = parts_dict[C2MConstants.ParsedField.REPLAY_HASH.value]
             if replay_hash is not None:
-                # Expect 16 bytes
                 subwriter.bytes(replay_hash)
                 bytes_written += 16
 
-            # HIDE_LOGIC (1 byte)
-            hide_logic = parts[C2MConstants.ParsedField.HIDE_LOGIC.value]
-            if hide_logic is not None:
-                subwriter.byte(hide_logic)
-                bytes_written += 1
+            # HIDE_LOGIC (byte)
+            _append_byte_if_not_none(C2MConstants.ParsedField.HIDE_LOGIC)
+            # CC1_BOOTS (byte)
+            _append_byte_if_not_none(C2MConstants.ParsedField.CC1_BOOTS)
+            # BLOB_PATTERNS (byte)
+            _append_byte_if_not_none(C2MConstants.ParsedField.BLOB_PATTERNS)
 
-            # CC1_BOOTS (1 byte)
-            cc1_boots = parts[C2MConstants.ParsedField.CC1_BOOTS.value]
-            if cc1_boots is not None:
-                subwriter.byte(cc1_boots)
-                bytes_written += 1
-
-            # BLOB_PATTERNS (1 byte)
-            blob_patterns = parts[C2MConstants.ParsedField.BLOB_PATTERNS.value]
-            if blob_patterns is not None:
-                subwriter.byte(blob_patterns)
-                bytes_written += 1
-
-            # If we wrote anything at all, then we have an OPTIONS section:
+            # If any of these fields were present, write the OPTIONS section
             if bytes_written > 0:
                 writer.bytes(C2MConstants.OPTIONS)
                 writer.long(bytes_written)
                 writer.bytes(subwriter.written())
 
-            # 4) If there's a separate read-only chunk, the parser checks that length == 0.
-            #    Typically, you'd only write this if parts[ParsedField.READ_ONLY] is True, etc.
-            #    Here, we check if read_only_option is set to 1 or something.
-            #    You can define your own logic based on how you interpret "read_only".
-            if parts[C2MConstants.ParsedField.READ_ONLY.value]:
+            # 4) If there's a separate read-only chunk, the parser checks that length == 0
+            #    Typically, you would write this only if parsed_level.READ_ONLY is True
+            #    or parts_dict[ParsedField.READ_ONLY.value] is True. Adjust as needed.
+            if parts_dict[C2MConstants.ParsedField.READ_ONLY.value]:
                 writer.bytes(C2MConstants.READ_ONLY)
                 writer.long(0)
 
-            # 5) Finally, write "END " to mark the end of the file
+            # 5) Write "END " to mark the end of the file
             writer.bytes(C2MConstants.END)
 
             return writer.written()
 
     class Packer:
-        """Packs or unpacks according to C2M compression rules."""
+        """
+        The Packer class handles packing (compressing) data using the C2M
+        compression scheme. It also relies on the Parser class for reading.
+
+        The compression rules operate with the notion of 'data blocks' and
+        'back references,' akin to a simple RLE or LZ77 approach.
+
+        Usage:
+            packed_data = C2MHandler.Packer.pack(unpacked_bytes)
+        """
 
         def __init__(self):
-            self.reader, self.writer = None, None
+            self.reader = None
+            self.writer = None
 
         @staticmethod
-        def pack(unpacked_bytes):
-            """Packs according to C2M compression rules."""
-            p = C2MHandler.Packer()
-            p.reader = C2MHandler.Parser(unpacked_bytes)
-            p.writer = C2MHandler.Writer()
-            p.writer.short(p.reader.size())
-            while p.reader.remaining() > 0:
-                p.pack_data_blocks()
-                p.pack_back_ref_blocks()
-            return p.writer.written()
+        def pack(unpacked_bytes: bytes) -> bytes:
+            """
+            Compress (pack) data according to the C2M rules.
 
-        def pack_data_blocks(self):
-            """Packs 1 or more data blocks according to C2M compression rules."""
-            w, r = self.writer, self.reader
-            start = r.current()
-            # Up to 127 of the bytes we haven't processed yet.
-            eligible = r.raw()[start:start + 0x7F]
-            if len(eligible) == 0:
-                return
+            :param unpacked_bytes: The raw data to be compressed.
+            :return: The compressed data as a bytes object.
+            """
+            packer = C2MHandler.Packer()
+            packer.reader = C2MHandler.Parser(unpacked_bytes)
+            packer.writer = C2MHandler.Writer()
 
-            # We have seen all 4-length substrings up to 255 previous indices
-            seen = set()
-            offset_limit = max(start - 0xFF, 0)
-            for i in range(offset_limit, start):
-                substring = r.raw()[i:i + 4]
+            # First, write the uncompressed length (2 bytes, short)
+            packer.writer.short(packer.reader.size())
+
+            # Keep packing blocks (data or backref) until we exhaust the reader
+            while packer.reader.remaining() > 0:
+                packer._pack_data_blocks()
+                packer._pack_back_ref_blocks()
+
+            return packer.writer.written()
+
+        def _pack_data_blocks(self):
+            """
+            Pack one or more 'data blocks' according to C2M compression rules.
+            A data block is indicated by a byte n <= 0x7F, followed by n raw bytes.
+            """
+            start_index = self.reader.current()
+            # Up to 127 unprocessed bytes
+            chunk = self.reader.raw()[start_index : start_index + 0x7F]
+
+            if len(chunk) == 0:
+                return  # Nothing to pack
+
+            seen_substrings = set()
+            offset_limit = max(start_index - 0xFF, 0)
+            max_seen_index = start_index
+
+            # Collect previously seen 4-byte substrings within a 255-byte window
+            for i in range(offset_limit, start_index):
+                substring = self.reader.raw()[i : i + 4]
                 if len(substring) == 4:
-                    seen.add(substring)
-            max_seen_index = start
+                    seen_substrings.add(substring)
 
-            # We want to write all bytes up until the first substring that has already
-            # been added to the set.
-            for i in range(len(eligible) - 4):
-                # make sure we have all substrings looking back a max of 255 bytes
-                for j in range(max_seen_index, start + i):
-                    seen.add(r.raw()[j:j + 4])
-                max_seen_index = start + i
+            # We'll try to find the first 4-byte substring in `chunk` that we've
+            # already seen, so we know where a back-ref block might start.
+            for i in range(len(chunk) - 4):
+                # Add new 4-byte substrings that come into range
+                for j in range(max_seen_index, start_index + i):
+                    sub4 = self.reader.raw()[j : j + 4]
+                    if len(sub4) == 4:
+                        seen_substrings.add(sub4)
+                max_seen_index = start_index + i
 
-                substring = eligible[i:i + 4]
-                if substring in seen:
+                current_sub4 = chunk[i : i + 4]
+                if current_sub4 in seen_substrings:
+                    # We've hit a repeat substring; write all data bytes up to here
                     if i > 0:
-                        w.byte(i)
-                        w.bytes(r.bytes(i))
+                        self.writer.byte(i)  # length of data block
+                        self.writer.bytes(self.reader.bytes(i))
                     return
 
-            # If we got to this point, we should write all eligible bytes and then try
-            # to write another data block.
-            # if len(eligible) > 4:
-            w.byte(len(eligible))
-            w.bytes(r.bytes(len(eligible)))
-            self.pack_data_blocks()
+            # If no repeats found in the chunk, write out all of it as a data block
+            self.writer.byte(len(chunk))
+            self.writer.bytes(self.reader.bytes(len(chunk)))
 
-        def pack_back_ref_blocks(self):
-            """Packs a single back reference block according to C2M compression rules."""
-            w, r = self.writer, self.reader
-            raw = r.raw()
-            if r.remaining() < 4:
+            # Attempt to pack more data blocks recursively
+            self._pack_data_blocks()
+
+        def _pack_back_ref_blocks(self):
+            """
+            Attempt to pack a single 'back reference block,' indicated by:
+            - a byte n, where n = 0x80 + length
+            - a byte offset (how far back to read)
+
+            If insufficient repeating data is found, this method does nothing (no-op).
+            """
+
+            # If fewer than 4 bytes remain unread, we can't form a back-ref block.
+            if self.reader.remaining() < 4:
                 return
-            index = r.current()
-            limit = min(index + 0x7F, r.size())  # limit how far forward to look
-            offset = max(index - 0xFF, 0)  # limit how far back to look
-            test = raw[index:index + 4]
-            repeat_offset = r.size()
-            repeat_length = 0
-            while offset < index:
-                if raw[offset:offset + 4] != test:
-                    offset += 1
-                    continue
-                i = index + 4
-                o = offset + 4
-                while i < limit and raw[o] == raw[i]:
-                    i += 1
-                    o += 1
-                length = i - index
-                if length > repeat_length:
-                    repeat_offset = offset
-                    repeat_length = length
-                offset += 1
 
-            if repeat_length > 0:
-                count = repeat_length
-                offset = index - repeat_offset
-                w.byte(0x80 | count)
-                w.byte(offset)
-                r.seek(index + count)
+            current_pos = self.reader.current()
+            # We'll look forward up to 0x7F bytes from the current position.
+            forward_limit = min(current_pos + 0x7F, self.reader.size())
+            # We'll look backward up to 0xFF bytes from the current position.
+            backward_limit = max(current_pos - 0xFF, 0)
+
+            # The candidate substring is the next 4 bytes at the current reader position.
+            candidate_substring = self.reader.raw()[current_pos: current_pos + 4]
+
+            best_match_offset = None
+            best_match_length = 0
+
+            # Search backward in a 255-byte window to find the longest match.
+            search_index = backward_limit
+            while search_index < current_pos:
+                window_substring = self.reader.raw()[search_index: search_index + 4]
+
+                # If the 4-byte window matches our candidate, see how far it extends.
+                if window_substring == candidate_substring:
+                    forward_index = current_pos + 4
+                    window_index = search_index + 4
+
+                    # Continue matching bytes while within forward_limit.
+                    while (
+                            forward_index < forward_limit
+                            and self.reader.raw()[window_index] == self.reader.raw()[forward_index]
+                    ):
+                        forward_index += 1
+                        window_index += 1
+
+                    # Calculate the total length of the matched substring.
+                    current_match_length = forward_index - current_pos
+
+                    # Update our best match if this one is longer.
+                    if current_match_length > best_match_length:
+                        best_match_length = current_match_length
+                        best_match_offset = search_index
+
+                search_index += 1
+
+            # If a match was found, write the back-ref block.
+            if best_match_length > 0 and best_match_offset is not None:
+                # The byte n is 0x80 + match_length.
+                self.writer.byte(0x80 | best_match_length)
+                # The offset is how far back from the current position the match begins.
+                self.writer.byte(current_pos - best_match_offset)
+                # Advance the reader by the length of the matched block.
+                self.reader.seek(current_pos + best_match_length)
+
