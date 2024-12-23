@@ -195,9 +195,6 @@ class TestC2MModifiers(unittest.TestCase):
         track_bytes = bytes([0x0D, 0x31])
         result = C2MModifiers.parse_modifier(tile_id, track_bytes)
 
-        # Verify the combined track value (little endian: high_byte << 8 | low_byte)
-        self.assertEqual(result["track_value"], 0x310D)
-
         # Ensure 'tracks' key exists and contains the correct segments
         self.assertIn("tracks", result)
         self.assertCountEqual(result["tracks"], ["NE", "SW", "NW"])  # from 0x0D
@@ -229,7 +226,7 @@ class TestC2MModifiers(unittest.TestCase):
         """
         tile_id = CC2.RAILROAD_TRACK
         with self.assertRaises(ValueError):
-            C2MModifiers.parse_modifier(tile_id, bytes([0x01]))  # only 1 byte
+            C2MModifiers.parse_modifier(tile_id, bytes([0x01] * 4))  # 4 byte
 
     def test_cannot_apply_modifier_to_unknown_tile(self):
         """

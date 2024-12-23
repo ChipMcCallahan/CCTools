@@ -84,11 +84,11 @@ class C2MModifiers:
 
         # Validate length for either 1-byte or 2-byte modifiers
         if tile_id == CC2.RAILROAD_TRACK:
-            if len(value) != 2:
-                raise ValueError("Railroad track modifier must be exactly 2 bytes.")
+            if len(value) not in (1, 2):
+                raise ValueError("Railroad track modifier must be 1 or 2 bytes.")
         else:
             if len(value) != 1:
-                raise ValueError("Modifier must be exactly 1 byte (except railroad track).")
+                raise ValueError(f"Modifier must be exactly 1 byte for {tile_id}.")
 
         # -- Wire modifier (8-bit) -------------------------------------------
         if tile_id in CC2.wired():
@@ -174,14 +174,10 @@ class C2MModifiers:
 
                 data["gate"] = f"{gate_type}_{direction_str}"
 
-        # -- Railroad track modifier (16-bit, little endian) -----------------
+        # -- Railroad track modifier (8- or 16-bit, little endian) -----------------
         elif tile_id == CC2.RAILROAD_TRACK:
-            if len(value) not in (1, 2):
-                raise ValueError("Railroad track modifier must be 1 or 2 bytes.")
-
             # Parse 1 or 2 bytes into track_val
             track_val = value[0] | (value[1] << 8) if len(value) == 2 else value[0]
-            data["track_value"] = track_val
 
             low_byte = track_val & 0xFF
             high_byte = (track_val >> 8) & 0xFF
