@@ -1,6 +1,7 @@
 import unittest
 
-from cc_tools.c2m_modifiers import C2MModifiers
+# Import both the C2MModifiers class and the ModKey enum:
+from cc_tools.c2m_modifiers import C2MModifiers, ModKey
 from cc_tools.cc2 import CC2
 
 class TestC2MModifiers(unittest.TestCase):
@@ -17,10 +18,10 @@ class TestC2MModifiers(unittest.TestCase):
         test_value = bytes([0x92])
 
         result = C2MModifiers.parse_modifier(tile_id, test_value)
-        self.assertIn("wires", result)
-        self.assertIn("wire_tunnels", result)
-        self.assertEqual(result["wires"], "E")  # East only
-        self.assertEqual(result["wire_tunnels"], "NW")  # North, West
+        self.assertIn(ModKey.WIRES, result)
+        self.assertIn(ModKey.WIRE_TUNNELS, result)
+        self.assertEqual(result[ModKey.WIRES], "E")     # East only
+        self.assertEqual(result[ModKey.WIRE_TUNNELS], "NW")  # North, West
 
     def test_wire_modifier_build(self):
         """
@@ -28,8 +29,8 @@ class TestC2MModifiers(unittest.TestCase):
         """
         tile_id = CC2.FLOOR  # in CC2.wired()
         data = {
-            "wires": "SE",         # South, East
-            "wire_tunnels": "N",   # North
+            ModKey.WIRES: "SE",         # South, East
+            ModKey.WIRE_TUNNELS: "N",   # North
         }
         # wires (S,E) => bits 2,1 => 0b0110 = 0x06
         # wire_tunnels (N) => bit 4 => 0b10000 = 0x10
@@ -53,15 +54,15 @@ class TestC2MModifiers(unittest.TestCase):
 
         # 0x1E => "↓" arrow
         result_arrow = C2MModifiers.parse_modifier(tile_id, bytes([0x1E]))
-        self.assertEqual(result_arrow["char"], "↓")
+        self.assertEqual(result_arrow[ModKey.CHAR], "↓")
 
         # 0x41 => 'A'
         result_char = C2MModifiers.parse_modifier(tile_id, bytes([0x41]))
-        self.assertEqual(result_char["char"], "A")
+        self.assertEqual(result_char[ModKey.CHAR], "A")
 
         # 0x1B => outside arrow range, not ASCII 20..5F => None
         result_none = C2MModifiers.parse_modifier(tile_id, bytes([0x1B]))
-        self.assertIsNone(result_none["char"])
+        self.assertIsNone(result_none[ModKey.CHAR])
 
     def test_letter_tile_build(self):
         """
@@ -70,17 +71,17 @@ class TestC2MModifiers(unittest.TestCase):
         tile_id = CC2.LETTER_TILE_SPACE
 
         # Arrow
-        data_arrow = {"char": "←"}
+        data_arrow = {ModKey.CHAR: "←"}
         result_arrow = C2MModifiers.build_modifier(tile_id, data_arrow)
         self.assertEqual(result_arrow, bytes([0x1F]))
 
         # ASCII
-        data_char = {"char": "Z"}
+        data_char = {ModKey.CHAR: "Z"}
         result_char = C2MModifiers.build_modifier(tile_id, data_char)
         self.assertEqual(result_char, bytes([0x5A]))  # 'Z' => 0x5A
 
         # None or invalid => 0
-        data_invalid = {"char": "ß"}  # outside 0x20..0x5F
+        data_invalid = {ModKey.CHAR: "ß"}  # outside 0x20..0x5F
         result_invalid = C2MModifiers.build_modifier(tile_id, data_invalid)
         self.assertEqual(result_invalid, bytes([0x00]))
 
@@ -91,7 +92,7 @@ class TestC2MModifiers(unittest.TestCase):
         tile_id = CC2.CLONE_MACHINE
         # 0x0D => binary 0b1101 => N (1), E (0), S (1), W (1)
         result = C2MModifiers.parse_modifier(tile_id, bytes([0x0D]))
-        self.assertEqual(result["directions"], "NSW")
+        self.assertEqual(result[ModKey.DIRECTIONS], "NSW")
 
     def test_clone_machine_build(self):
         """
@@ -99,7 +100,7 @@ class TestC2MModifiers(unittest.TestCase):
         """
         tile_id = CC2.CLONE_MACHINE
         # directions = "NEW" => bits for N=1, E=2, W=8 => total 0x0B
-        data = {"directions": "NEW"}
+        data = {ModKey.DIRECTIONS: "NEW"}
         result_bytes = C2MModifiers.build_modifier(tile_id, data)
         self.assertEqual(result_bytes, bytes([0x0B]))
 
@@ -110,7 +111,7 @@ class TestC2MModifiers(unittest.TestCase):
         tile_id = CC2.CUSTOM_FLOOR
         # Suppose 0 => Green, 1 => Pink, 2 => Yellow, 3 => Blue
         result = C2MModifiers.parse_modifier(tile_id, bytes([2]))
-        self.assertEqual(result["color"], "Yellow")
+        self.assertEqual(result[ModKey.COLOR], "Yellow")
 
         # Invalid color
         with self.assertRaises(ValueError):
@@ -121,12 +122,12 @@ class TestC2MModifiers(unittest.TestCase):
         Test building custom tile modifiers.
         """
         tile_id = CC2.CUSTOM_FLOOR
-        data = {"color": "Blue"}
+        data = {ModKey.COLOR: "Blue"}
         result = C2MModifiers.build_modifier(tile_id, data)
         self.assertEqual(result, bytes([3]))  # 'Blue' => 3
 
         # Invalid color
-        data_invalid = {"color": "Rainbow"}
+        data_invalid = {ModKey.COLOR: "Rainbow"}
         with self.assertRaises(ValueError):
             C2MModifiers.build_modifier(tile_id, data_invalid)
 
@@ -136,7 +137,7 @@ class TestC2MModifiers(unittest.TestCase):
         """
         tile_id = CC2.LOGIC_GATE
         result = C2MModifiers.parse_modifier(tile_id, bytes([0x01]))
-        self.assertEqual(result["gate"], "Inverter_E")
+        self.assertEqual(result[ModKey.GATE], "Inverter_E")
 
     def test_logic_gate_parse_counter(self):
         """
@@ -144,14 +145,14 @@ class TestC2MModifiers(unittest.TestCase):
         """
         tile_id = CC2.LOGIC_GATE
         result = C2MModifiers.parse_modifier(tile_id, bytes([0x23]))
-        self.assertEqual(result["gate"], "Counter_5")
+        self.assertEqual(result[ModKey.GATE], "Counter_5")
 
     def test_logic_gate_build_xor_south(self):
         """
         Test building a logic gate: XOR facing South => base=0x0C plus direction=2 => 0x0E
         """
         tile_id = CC2.LOGIC_GATE
-        data = {"gate": "XOR_S"}
+        data = {ModKey.GATE: "XOR_S"}
         result = C2MModifiers.build_modifier(tile_id, data)
         self.assertEqual(result, bytes([0x0E]))
 
@@ -160,7 +161,7 @@ class TestC2MModifiers(unittest.TestCase):
         Test building a logic gate for Counter_9 => 0x1E + 9 => 0x27
         """
         tile_id = CC2.LOGIC_GATE
-        data = {"gate": "Counter_9"}
+        data = {ModKey.GATE: "Counter_9"}
         result = C2MModifiers.build_modifier(tile_id, data)
         self.assertEqual(result, bytes([0x27]))
 
@@ -170,7 +171,7 @@ class TestC2MModifiers(unittest.TestCase):
         """
         tile_id = CC2.LOGIC_GATE
         with self.assertRaises(ValueError):
-            C2MModifiers.build_modifier(tile_id, {"gate": "XOR_X"})
+            C2MModifiers.build_modifier(tile_id, {ModKey.GATE: "XOR_X"})
 
     def test_railroad_track_parse(self):
         """
@@ -196,14 +197,14 @@ class TestC2MModifiers(unittest.TestCase):
         result = C2MModifiers.parse_modifier(tile_id, track_bytes)
 
         # Ensure 'tracks' key exists and contains the correct segments
-        self.assertIn("tracks", result)
-        self.assertCountEqual(result["tracks"], ["NE", "SW", "NW"])  # from 0x0D
+        self.assertIn(ModKey.TRACKS, result)
+        self.assertCountEqual(result[ModKey.TRACKS], ["NE", "SW", "NW"])  # from 0x0D
 
         # Verify the active track is correctly parsed
-        self.assertEqual(result["active_track"], "SE")
+        self.assertEqual(result[ModKey.ACTIVE_TRACK], "SE")
 
         # Verify the initial entry direction is correctly parsed
-        self.assertEqual(result["initial_entry"], "W")
+        self.assertEqual(result[ModKey.INITIAL_ENTRY], "W")
 
     def test_railroad_track_build(self):
         """
@@ -211,9 +212,9 @@ class TestC2MModifiers(unittest.TestCase):
         """
         tile_id = CC2.RAILROAD_TRACK
         data = {
-            "tracks": ["SE", "SW", "VERTICAL"],  # SE=2, SW=4, Vertical=32 => total 38 decimal => 0x26
-            "active_track": "NE",                # NE => 0
-            "initial_entry": "S",                # S => 2
+            ModKey.TRACKS: ["SE", "SW", "VERTICAL"],  # SE=2, SW=4, Vertical=32 => total 0x26
+            ModKey.ACTIVE_TRACK: "NE",                # NE => 0
+            ModKey.INITIAL_ENTRY: "S",                # S => 2
         }
         # low_byte=0x26, high_byte => (2 << 4) | 0 => 0x20
         # => resulting bytes = [0x26, 0x20]
@@ -222,11 +223,11 @@ class TestC2MModifiers(unittest.TestCase):
 
     def test_railroad_track_invalid_length(self):
         """
-        Test parsing an invalid length for railroad track (must be 2 bytes).
+        Test parsing an invalid length for railroad track (must be 2 bytes if 2 bytes are present).
         """
         tile_id = CC2.RAILROAD_TRACK
         with self.assertRaises(ValueError):
-            C2MModifiers.parse_modifier(tile_id, bytes([0x01] * 4))  # 4 byte
+            C2MModifiers.parse_modifier(tile_id, bytes([0x01] * 4))  # 4 bytes is invalid
 
     def test_cannot_apply_modifier_to_unknown_tile(self):
         """
@@ -282,10 +283,10 @@ class TestC2MModifiers(unittest.TestCase):
         Test that parse_direction fails if byte length != 1.
         """
         # No bytes
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             C2MModifiers.parse_direction(b"")
         # More than 1 byte
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             C2MModifiers.parse_direction(b"\x00\x01")
 
     # ---------------------------------------
@@ -297,16 +298,16 @@ class TestC2MModifiers(unittest.TestCase):
         'C' indicates canopy bit.
         """
         cases = [
-            ("", 0x00),  # no walls, no canopy
-            ("N", 0x01),  # north
-            ("E", 0x02),  # east
-            ("S", 0x04),  # south
-            ("W", 0x08),  # west
-            ("C", 0x10),  # canopy only
-            ("NW", 0x09),  # north + west
+            ("", 0x00),     # no walls, no canopy
+            ("N", 0x01),    # north
+            ("E", 0x02),    # east
+            ("S", 0x04),    # south
+            ("W", 0x08),    # west
+            ("C", 0x10),    # canopy only
+            ("NW", 0x09),   # north + west
             ("NWC", 0x19),  # north + west + canopy
-            ("NESW", 0x0F),  # all walls
-            ("NESWC", 0x1F),  # all walls + canopy
+            ("NESW", 0x0F), # all walls
+            ("NESWC", 0x1F) # all walls + canopy
         ]
         for walls_str, expected_val in cases:
             with self.subTest(walls=walls_str):

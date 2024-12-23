@@ -3,10 +3,9 @@ from enum import Enum, IntEnum
 
 from .cc2 import CC2
 
-
-# -----------------------
+# ------------------------------------------------
 # Enums & Constants
-# -----------------------
+# ------------------------------------------------
 
 class Direction(IntEnum):
     """Represents a direction for logic gates, clone machines, and railroad entry."""
@@ -33,7 +32,7 @@ class LogicGateType(Enum):
     LATCH_CW = "LatchCW"
     NAND = "NAND"
     LATCH_CCW = "LatchCCW"
-    VOODOO = "Voodoo"   # This one is special; we store the base hex in data
+    VOODOO = "Voodoo"   # We store the base hex in data
     COUNTER = "Counter" # This is for Counter_0..Counter_9
 
 
@@ -58,6 +57,19 @@ class ActiveTrack(IntEnum):
     VERTICAL = 5
 
 
+class ModKey(Enum):
+    """Enum representing all possible keys for modifier data."""
+    WIRES = "wires"
+    WIRE_TUNNELS = "wire_tunnels"
+    CHAR = "char"
+    DIRECTIONS = "directions"
+    COLOR = "color"
+    GATE = "gate"
+    TRACKS = "tracks"
+    ACTIVE_TRACK = "active_track"
+    INITIAL_ENTRY = "initial_entry"
+
+
 # Maps for arrow characters on letter tiles
 ARROW_MAP = {
     0x1C: "↑",
@@ -65,22 +77,25 @@ ARROW_MAP = {
     0x1E: "↓",
     0x1F: "←",
 }
+ARROW_MAP_INV = {v: k for k, v in ARROW_MAP.items()}
 
-ARROW_MAP_INV = {v: k for k, v in ARROW_MAP.items()}  # e.g. {"↑": 0x1C, "→": 0x1D, ...}
 
-
-# -----------------------
+# ------------------------------------------------
 # C2MModifiers class
-# -----------------------
+# ------------------------------------------------
 
 class C2MModifiers:
     @staticmethod
-    def parse_modifier(tile_id: CC2, value: bytes) -> Dict[str, Any]:
+    def parse_modifier(tile_id: CC2, value: bytes) -> Dict[ModKey, Any]:
         """
         Parse the modifier bytes for the given tile (tile_id) and return
         a dictionary containing the relevant information.
+
+        :param tile_id: The tile ID (from CC2).
+        :param value: The raw modifier bytes for that tile.
+        :return: A dictionary with parsed fields, e.g. { "wires": "NS", ... }
         """
-        data: Dict[str, Any] = {}
+        data: Dict[ModKey, Any] = {}
 
         # Validate length for either 1-byte or 2-byte modifiers
         if tile_id == CC2.RAILROAD_TRACK:
@@ -90,70 +105,66 @@ class C2MModifiers:
             if len(value) != 1:
                 raise ValueError(f"Modifier must be exactly 1 byte for {tile_id}.")
 
-        # -- Wire modifier (8-bit) -------------------------------------------
+        # ------------------ Wires & Wire Tunnels ------------------
         if tile_id in CC2.wired():
             wire_byte = value[0]
-            # For wires and wire tunnels, use the lowest 4 bits for wires, highest 4 bits for tunnels
-            all_dirs = [Direction.N, Direction.E, Direction.S, Direction.W]
-            wire_dirs = []
-            wire_tun_dirs = []
-            for i, d in enumerate(all_dirs):
+            directions_enum = [Direction.N, Direction.E, Direction.S, Direction.W]
+            wires_list = []
+            wire_tunnels_list = []
+
+            for i, d in enumerate(directions_enum):
                 if wire_byte & (1 << i):
-                    wire_dirs.append(d.name)
+                    wires_list.append(d.name)
                 if wire_byte & (1 << (i + 4)):
-                    wire_tun_dirs.append(d.name)
+                    wire_tunnels_list.append(d.name)
 
-            data["wires"] = "".join(wire_dirs)
-            data["wire_tunnels"] = "".join(wire_tun_dirs)
+            data[ModKey.WIRES] = "".join(wires_list)
+            data[ModKey.WIRE_TUNNELS] = "".join(wire_tunnels_list)
 
-        # -- Letter tile modifier (8-bit) ------------------------------------
+        # ------------------ Letter Tile ------------------
         elif tile_id == CC2.LETTER_TILE_SPACE:
             letter_val = value[0]
-
-            # Use arrow if in ARROW_MAP, else ASCII char if in [0x20..0x5F], else None
             if letter_val in ARROW_MAP:
-                data["char"] = ARROW_MAP[letter_val]
+                data[ModKey.CHAR] = ARROW_MAP[letter_val]
             elif 0x20 <= letter_val <= 0x5F:
-                data["char"] = chr(letter_val)
+                data[ModKey.CHAR] = chr(letter_val)
             else:
-                data["char"] = None
+                data[ModKey.CHAR] = None
 
-        # -- Clone machine arrow modifier (8-bit) ----------------------------
+        # ------------------ Clone Machine ------------------
         elif tile_id == CC2.CLONE_MACHINE:
             clone_val = value[0]
-            all_dirs = [Direction.N, Direction.E, Direction.S, Direction.W]
-            directions = []
-            for d, bit in zip(all_dirs, [0x01, 0x02, 0x04, 0x08]):
-                if clone_val & bit:
-                    directions.append(d.name)
-            data["directions"] = "".join(directions)
+            directions_enum = [Direction.N, Direction.E, Direction.S, Direction.W]
+            result_dirs = []
+            for d, bit_mask in zip(directions_enum, [0x01, 0x02, 0x04, 0x08]):
+                if clone_val & bit_mask:
+                    result_dirs.append(d.name)
+            data[ModKey.DIRECTIONS] = "".join(result_dirs)
 
-        # -- Custom floor/wall modifier (8-bit) ------------------------------
+        # ------------------ Custom Floor/Wall ------------------
         elif tile_id in CC2.custom_tiles():
             color_val = value[0]
             try:
-                data["color"] = CustomTileColor(color_val).name.capitalize()  # e.g. "Green"
+                # e.g. CustomTileColor.GREEN -> "GREEN", then capitalize -> "Green"
+                data[ModKey.COLOR] = CustomTileColor(color_val).name.capitalize()
             except ValueError:
                 raise ValueError(f"Unknown custom tile color value: {color_val}")
 
-        # -- Logic modifier (8-bit) ------------------------------------------
+        # ------------------ Logic Gate ------------------
         elif tile_id == CC2.LOGIC_GATE:
             logic_val = value[0]
-            # Check for counter range
             if 0x1E <= logic_val <= 0x27:
-                # e.g. 0x1E -> Counter_0, 0x27 -> Counter_9
+                # e.g. 0x1E -> "Counter_0", 0x27 -> "Counter_9"
                 digit = logic_val - 0x1E
-                data["gate"] = f"{LogicGateType.COUNTER.value}_{digit}"
+                data[ModKey.GATE] = f"{LogicGateType.COUNTER.value}_{digit}"
             else:
-                # direction = logic_val % 4
                 direction_idx = logic_val & 0x03
                 try:
                     direction_str = Direction(direction_idx).name
                 except ValueError:
-                    direction_str = "N"  # fallback, or raise an error
+                    direction_str = "N"
 
-                # Gate type depends on which range it's in
-                gate_type = None
+                # Determine gate type by range
                 if 0x00 <= logic_val <= 0x03:
                     gate_type = LogicGateType.INVERTER.value
                 elif 0x04 <= logic_val <= 0x07:
@@ -172,34 +183,32 @@ class C2MModifiers:
                     # treat it as Voodoo
                     gate_type = f"{LogicGateType.VOODOO.value}_{logic_val:02X}"
 
-                data["gate"] = f"{gate_type}_{direction_str}"
+                data[ModKey.GATE] = f"{gate_type}_{direction_str}"
 
-        # -- Railroad track modifier (8- or 16-bit, little endian) -----------------
+        # ------------------ Railroad Track (8 or 16-bit) ------------------
         elif tile_id == CC2.RAILROAD_TRACK:
-            # Parse 1 or 2 bytes into track_val
             track_val = value[0] | (value[1] << 8) if len(value) == 2 else value[0]
-
             low_byte = track_val & 0xFF
             high_byte = (track_val >> 8) & 0xFF
 
-            # Track segments in the low byte
-            data["tracks"] = [seg.name for seg in TrackSegment if (low_byte & seg.value)]
+            # Track segments
+            data[ModKey.TRACKS] = [
+                seg.name for seg in TrackSegment if (low_byte & seg.value)
+            ]
 
-            # Active track in the lower nibble of high_byte
+            # Active track (lower nibble of high byte)
             active_nibble = high_byte & 0x0F
-            data["active_track"] = (
-                ActiveTrack(active_nibble).name
-                if active_nibble in ActiveTrack._value2member_map_
-                else None
-            )
+            if active_nibble in ActiveTrack._value2member_map_:
+                data[ModKey.ACTIVE_TRACK] = ActiveTrack(active_nibble).name
+            else:
+                data[ModKey.ACTIVE_TRACK] = None
 
-            # Initial entry direction in the upper nibble of high_byte
+            # Initial entry direction (upper nibble of high byte)
             entered_nibble = (high_byte >> 4) & 0x0F
-            data["initial_entry"] = (
-                Direction(entered_nibble).name
-                if entered_nibble in Direction._value2member_map_
-                else None
-            )
+            if entered_nibble in Direction._value2member_map_:
+                data[ModKey.INITIAL_ENTRY] = Direction(entered_nibble).name
+            else:
+                data[ModKey.INITIAL_ENTRY] = None
 
         else:
             raise ValueError(f"Cannot apply modifier to tile with id={tile_id}")
@@ -207,99 +216,87 @@ class C2MModifiers:
         return data
 
     @staticmethod
-    def build_modifier(tile_id: CC2, data: Dict[str, Any]) -> bytes:
+    def build_modifier(tile_id: CC2, data: Dict[ModKey, Any]) -> bytes:
         """
-        Given a tile id and a dictionary of fields (like the output of parse),
+        Given a tile id and a dictionary of fields (like the output of parse_modifier),
         build the corresponding bytes (1 or 2) for the tile's modifier.
         Raises ValueError for invalid data.
         """
-        # -- Wire modifier (8-bit) -------------------------------------------
+        # ------------------ Wires & Wire Tunnels ------------------
         if tile_id in CC2.wired():
-            # data["wires"] = e.g. "NESW" subset
-            # data["wire_tunnels"] = e.g. "NESW" subset
             wire_bits = 0
-            all_dirs = [Direction.N, Direction.E, Direction.S, Direction.W]
-            wires_str = data.get("wires", "")
-            wire_tunnels_str = data.get("wire_tunnels", "")
-            for i, d in enumerate(all_dirs):
+            directions_enum = [Direction.N, Direction.E, Direction.S, Direction.W]
+            wires_str = data.get(ModKey.WIRES, "")
+            wire_tunnels_str = data.get(ModKey.WIRE_TUNNELS, "")
+            for i, d in enumerate(directions_enum):
                 if d.name in wires_str:
                     wire_bits |= (1 << i)
                 if d.name in wire_tunnels_str:
                     wire_bits |= (1 << (i + 4))
             return bytes([wire_bits])
 
-        # -- Letter tile modifier (8-bit) ------------------------------------
+        # ------------------ Letter Tile ------------------
         elif tile_id == CC2.LETTER_TILE_SPACE:
-            # data["char"] could be arrow or ASCII
-            c = data.get("char")
+            c = data.get(ModKey.CHAR)
             if c is None:
                 return bytes([0])
-
             if c in ARROW_MAP_INV:
                 return bytes([ARROW_MAP_INV[c]])
 
             val = ord(c)
-            # ASCII in [0x20..0x5F]
             if 0x20 <= val <= 0x5F:
                 return bytes([val])
-            return bytes([0])  # fallback if invalid
+            return bytes([0])  # fallback
 
-        # -- Clone machine arrow modifier (8-bit) ----------------------------
+        # ------------------ Clone Machine ------------------
         elif tile_id == CC2.CLONE_MACHINE:
             clone_val = 0
-            all_dirs = [Direction.N, Direction.E, Direction.S, Direction.W]
-            directions_str = data.get("directions", "")
-            for d, bit in zip(all_dirs, [0x01, 0x02, 0x04, 0x08]):
+            directions_enum = [Direction.N, Direction.E, Direction.S, Direction.W]
+            directions_str = data.get(ModKey.DIRECTIONS, "")
+            for d, bit_mask in zip(directions_enum, [0x01, 0x02, 0x04, 0x08]):
                 if d.name in directions_str:
-                    clone_val |= bit
+                    clone_val |= bit_mask
             return bytes([clone_val])
 
-        # -- Custom floor/wall modifier (8-bit) ------------------------------
+        # ------------------ Custom Floor/Wall ------------------
         elif tile_id in CC2.custom_tiles():
-            color_str = data.get("color", "")
-            # We expect "Green", "Pink", "Yellow", "Blue" (capitalized from enum.name)
-            # Attempt to match an enum:
+            color_str = data.get(ModKey.COLOR, "")
             try:
                 color_val = CustomTileColor[color_str.upper()].value
             except KeyError:
                 raise ValueError(f"Unknown custom tile color: {color_str}")
             return bytes([color_val])
 
-        # -- Logic modifier (8-bit) ------------------------------------------
+        # ------------------ Logic Gate ------------------
         elif tile_id == CC2.LOGIC_GATE:
-            gate_str = data.get("gate", "")
+            gate_str = data.get(ModKey.GATE, "")
             if gate_str.startswith(f"{LogicGateType.COUNTER.value}_"):
-                # "Counter_X"
                 try:
                     digit_str = gate_str.replace(f"{LogicGateType.COUNTER.value}_", "")
                     digit = int(digit_str)
                 except ValueError:
                     raise ValueError(f"Invalid counter gate string: {gate_str}")
                 if not (0 <= digit <= 9):
-                    raise ValueError(f"Counter value out of range (0..9): {digit}")
+                    raise ValueError(f"Counter value out of range: {digit}")
                 logic_val = 0x1E + digit
-
             else:
-                # e.g. "AND_E", "Inverter_W", "Voodoo_3A_N", etc.
                 parts = gate_str.split("_")
                 if len(parts) == 1:
-                    # e.g. "AND" (no direction) => default N
+                    # e.g. "AND" => default direction N
                     gate_type_str = parts[0]
                     direction_str = "N"
                 elif len(parts) == 2:
                     gate_type_str, direction_str = parts
                 else:
                     # Possibly "Voodoo_3A_N" => 3 parts
-                    gate_type_str = "_".join(parts[:-1])  # e.g. "Voodoo_3A"
+                    gate_type_str = "_".join(parts[:-1])
                     direction_str = parts[-1]
 
-                # Validate direction
                 try:
                     direction_val = Direction[direction_str].value
                 except KeyError:
                     raise ValueError(f"Invalid direction '{direction_str}' in gate {gate_str}")
 
-                # Map gate types to logic_val
                 if gate_type_str == LogicGateType.INVERTER.value:
                     logic_val = 0x00 + direction_val
                 elif gate_type_str == LogicGateType.AND.value:
@@ -313,12 +310,10 @@ class C2MModifiers:
                 elif gate_type_str == LogicGateType.NAND.value:
                     logic_val = 0x14 + direction_val
                 elif gate_type_str == LogicGateType.LATCH_CCW.value:
-                    # 0x40..0x43
                     logic_val = 0x40 + direction_val
                 elif gate_type_str.startswith(LogicGateType.VOODOO.value + "_"):
-                    # e.g. "Voodoo_3A"
                     try:
-                        # after 'Voodoo_', we have "3A"
+                        # e.g. "Voodoo_3A" => "3A"
                         hex_str = gate_type_str.split("_", 1)[1]
                         base_val = int(hex_str, 16)
                     except (IndexError, ValueError):
@@ -329,13 +324,13 @@ class C2MModifiers:
 
             return bytes([logic_val])
 
-        # -- Railroad track modifier (16-bit, little endian) -----------------
+        # ------------------ Railroad Track (16-bit) ------------------
         elif tile_id == CC2.RAILROAD_TRACK:
             low_byte = 0
             high_byte = 0
 
-            # 1) Build low_byte from track segments
-            segments_str_list = data.get("tracks", [])
+            # Build low_byte from track segments
+            segments_str_list = data.get(ModKey.TRACKS, [])
             if not isinstance(segments_str_list, list):
                 raise ValueError("Expected 'tracks' to be a list of track segment names.")
             for seg_str in segments_str_list:
@@ -345,38 +340,49 @@ class C2MModifiers:
                     raise ValueError(f"Invalid track segment '{seg_str}'")
                 low_byte |= seg_val
 
-            # 2) Build high_byte: lower nibble = active track, upper nibble = initial entry
-            active_track_str = data.get("active_track", ActiveTrack.NE.name)
+            # Build high_byte: lower nibble = active track, upper nibble = initial entry
+            active_track_str = data.get(ModKey.ACTIVE_TRACK, ActiveTrack.NE.name)
             try:
                 active_nib = ActiveTrack[active_track_str].value
             except KeyError:
                 raise ValueError(f"Invalid active track '{active_track_str}'")
 
-            init_entry_str = data.get("initial_entry", Direction.N.name)
+            init_entry_str = data.get(ModKey.INITIAL_ENTRY, Direction.N.name)
             try:
                 init_nib = Direction[init_entry_str].value
             except KeyError:
                 raise ValueError(f"Invalid initial entry direction '{init_entry_str}'")
 
             high_byte = (init_nib << 4) | active_nib
-
             return bytes([low_byte, high_byte])
 
         else:
             raise ValueError(f"Cannot build modifier for tile with id={tile_id}")
 
+    # ---------------------------------------------------------------------
+    # Additional parse/build helpers
+    # ---------------------------------------------------------------------
     @staticmethod
     def parse_direction(data: bytes) -> str:
-        """Parse a single-byte direction (0=N,1=E,2=S,3=W)."""
-        assert len(data) == 1, "Direction byte must be exactly 1 byte"
+        """
+        Parse a single-byte direction (0=N,1=E,2=S,3=W).
+        :param data: Exactly 1 byte.
+        :return: One of {"N","E","S","W"}.
+        """
+        if len(data) != 1:
+            raise ValueError("Direction byte must be exactly 1 byte")
         val = data[0]
         if val not in range(4):
             raise ValueError(f"Invalid direction byte {val}")
-        return Direction(val).name  # "N", "E", "S", "W"
+        return Direction(val).name
 
     @staticmethod
     def build_direction(direction_str: str) -> bytes:
-        """Build a single-byte direction from 'N','E','S','W'."""
+        """
+        Build a single-byte direction from a string in {"N","E","S","W"}.
+        :param direction_str: e.g. "N"
+        :return: A single byte with the direction value.
+        """
         try:
             return bytes([Direction[direction_str].value])
         except KeyError:
