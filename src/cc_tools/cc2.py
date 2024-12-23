@@ -318,7 +318,7 @@ class CC2(Enum):
         :return: A set of walls.
         :rtype: set
         """
-        return {cls.WALL, cls.STEEL_WALL, cls.SOLID_GREEN_WALL, cls.SOLID_BLUE_WALL} | cls.invisible_walls()
+        return {cls.WALL, cls.STEEL_WALL, cls.SOLID_GREEN_WALL, cls.SOLID_BLUE_WALL, cls.CUSTOM_WALL} | cls.invisible_walls()
 
     @classmethod
     def panels(cls):
@@ -698,3 +698,13 @@ class CC2(Enum):
         :rtype: set
         """
         return {cls.MODIFIER_8BIT, cls.MODIFIER_16BIT, cls.MODIFIER_32BIT}
+
+    @classmethod
+    def wired(cls):
+        return {cls.FLOOR, cls.STEEL_WALL, cls.TRANSMOGRIFIER,
+                cls.BLUE_TELEPORT, cls.RED_TELEPORT,
+                cls.PINK_BUTTON, cls.BLACK_BUTTON} | cls.switches()
+
+    @classmethod
+    def custom_tiles(cls):
+        return {cls.CUSTOM_WALL, cls.CUSTOM_FLOOR}
