@@ -1,11 +1,11 @@
 """Tests for CC1."""
 import importlib.resources
 import unittest
-from cc_tools.cc1 import CC1
 from cc_tools.cc1_cell import CC1Cell
 from cc_tools.cc1_level import CC1Level
 from cc_tools.cc1_level_transformer import CC1LevelTransformer
 from cc_tools.dat_handler import DATHandler
+from cc_tools.cc1 import CC1, FLIP_HORIZONTAL_MAP, FLIP_VERTICAL_MAP, FLIP_NE_SW_MAP, FLIP_NW_SE_MAP
 
 
 class TestCC1(unittest.TestCase):
@@ -82,6 +82,188 @@ class TestCC1(unittest.TestCase):
             self.assertEqual(t, t.left())
             self.assertEqual(t, t.reverse())
 
+    def test_dirs(self):
+        """Test that dirs() returns the correct string suffix."""
+        self.assertEqual(CC1.FLOOR.dirs(), "")
+        self.assertEqual(CC1.PLAYER_N.dirs(), "N")
+        self.assertEqual(CC1.ICE_NE.dirs(), "NE")
+        self.assertEqual(CC1.FORCE_RANDOM.dirs(), "")
+
+    def test_with_dirs_success(self):
+        """
+        Test with_dirs() on valid tiles, ensuring that
+        direction suffixes get replaced correctly.
+        """
+        # Replacing "N" with "S"
+        tile_ns = CC1.PLAYER_N.with_dirs("S")
+        self.assertEqual(tile_ns, CC1.PLAYER_S)
+
+        # Replacing "NE" with "SW"
+        tile_nesw = CC1.ICE_NE.with_dirs("SW")
+        self.assertEqual(tile_nesw, CC1.ICE_SW)
+
+        # Directionless tile remains itself if "" is given
+        tile_no_dir = CC1.FLOOR.with_dirs("")
+        self.assertEqual(tile_no_dir, CC1.FLOOR)
+
+    def test_with_dirs_fail_length(self):
+        """Test with_dirs() raising ValueError when lengths are mismatched."""
+        # Attempt to replace "N" with "NE"
+        with self.assertRaises(ValueError):
+            CC1.PLAYER_N.with_dirs("NE")
+
+        # Attempt to replace "NE" with "N"
+        with self.assertRaises(ValueError):
+            CC1.ICE_NE.with_dirs("N")
+
+    def test_with_dirs_fail_invalid(self):
+        """Test with_dirs() raising ValueError with invalid direction strings."""
+        with self.assertRaises(ValueError):
+            CC1.PLAYER_N.with_dirs("X")  # Single char but not in NESW
+
+        with self.assertRaises(ValueError):
+            CC1.ICE_NE.with_dirs("ABC")  # Arbitrary invalid string
+
+    def test_flip_horizontal(self):
+        """Test that flip_horizontal() flips E <-> W, NE <-> NW, SE <-> SW, etc."""
+        # Check each single direction
+        self.assertEqual(CC1.PLAYER_E.flip_horizontal(), CC1.PLAYER_W)
+        self.assertEqual(CC1.PLAYER_W.flip_horizontal(), CC1.PLAYER_E)
+        self.assertEqual(CC1.PLAYER_N.flip_horizontal(), CC1.PLAYER_N)  # N remains N
+        self.assertEqual(CC1.PLAYER_S.flip_horizontal(), CC1.PLAYER_S)  # S remains S
+
+        # Check diagonals
+        self.assertEqual(CC1.ICE_NE.flip_horizontal(), CC1.ICE_NW)
+        self.assertEqual(CC1.ICE_SE.flip_horizontal(), CC1.ICE_SW)
+
+        # FORCE_RANDOM remains unchanged
+        self.assertEqual(CC1.FORCE_RANDOM.flip_horizontal(), CC1.FORCE_RANDOM)
+
+        # Confirm that our flip map aligns with the code
+        for k, v in FLIP_HORIZONTAL_MAP.items():
+            # Build a dummy tile name like "PLAYER_{k}" if needed
+            # but skip if no such tile name exists to avoid KeyErrors
+            tile_name = f"PLAYER_{k}"
+            if tile_name in CC1.__members__:
+                tile = CC1[tile_name]
+                flipped_tile = CC1[tile_name].flip_horizontal()
+                expected_tile_name = f"PLAYER_{v}"
+                self.assertEqual(flipped_tile.name, expected_tile_name)
+
+    def test_flip_vertical(self):
+        """Test that flip_vertical() flips N <-> S, NE <-> SE, NW <-> SW, etc."""
+        # Single directions
+        self.assertEqual(CC1.PLAYER_N.flip_vertical(), CC1.PLAYER_S)
+        self.assertEqual(CC1.PLAYER_S.flip_vertical(), CC1.PLAYER_N)
+        self.assertEqual(CC1.PLAYER_E.flip_vertical(), CC1.PLAYER_E)
+        self.assertEqual(CC1.PLAYER_W.flip_vertical(), CC1.PLAYER_W)
+
+        # Diagonals
+        self.assertEqual(CC1.ICE_NE.flip_vertical(), CC1.ICE_SE)
+        self.assertEqual(CC1.ICE_NW.flip_vertical(), CC1.ICE_SW)
+
+        # FORCE_RANDOM remains unchanged
+        self.assertEqual(CC1.FORCE_RANDOM.flip_vertical(), CC1.FORCE_RANDOM)
+
+        # Confirm that our flip map aligns with the code
+        for k, v in FLIP_VERTICAL_MAP.items():
+            tile_name = f"PLAYER_{k}"
+            if tile_name in CC1.__members__:
+                tile = CC1[tile_name]
+                flipped_tile = tile.flip_vertical()
+                expected_tile_name = f"PLAYER_{v}"
+                self.assertEqual(flipped_tile.name, expected_tile_name)
+
+    def test_flip_ne_sw(self):
+        """
+        Test that flip_ne_sw() reflects across diagonal NE-SW:
+         - N <-> E
+         - S <-> W
+         - NE stays NE
+         - NW stays NW
+         - SE <-> SW
+        """
+        # Single directions
+        self.assertEqual(CC1.PLAYER_N.flip_ne_sw(), CC1.PLAYER_E)
+        self.assertEqual(CC1.PLAYER_E.flip_ne_sw(), CC1.PLAYER_N)
+        self.assertEqual(CC1.PLAYER_S.flip_ne_sw(), CC1.PLAYER_W)
+        self.assertEqual(CC1.PLAYER_W.flip_ne_sw(), CC1.PLAYER_S)
+
+        # Diagonals
+        self.assertEqual(CC1.ICE_NE.flip_ne_sw(), CC1.ICE_NE)  # remains NE
+        self.assertEqual(CC1.ICE_NW.flip_ne_sw(), CC1.ICE_NW)  # remains NW
+        self.assertEqual(CC1.ICE_SE.flip_ne_sw(), CC1.ICE_SW)
+        self.assertEqual(CC1.ICE_SW.flip_ne_sw(), CC1.ICE_SE)
+
+        # FORCE_RANDOM remains unchanged
+        self.assertEqual(CC1.FORCE_RANDOM.flip_ne_sw(), CC1.FORCE_RANDOM)
+
+        # Confirm that our flip map aligns with the code
+        for k, v in FLIP_NE_SW_MAP.items():
+            tile_name = f"PLAYER_{k}"
+            if tile_name in CC1.__members__:
+                tile = CC1[tile_name]
+                flipped_tile = tile.flip_ne_sw()
+                expected_tile_name = f"PLAYER_{v}"
+                self.assertEqual(flipped_tile.name, expected_tile_name)
+
+    def test_flip_nw_se(self):
+        """
+        Test that flip_nw_se() reflects across diagonal NW-SE:
+         - N <-> W
+         - S <-> E
+         - NE <-> NW
+         - SE stays SE
+         - SW stays SW
+        """
+        # Single directions
+        self.assertEqual(CC1.PLAYER_N.flip_nw_se(), CC1.PLAYER_W)
+        self.assertEqual(CC1.PLAYER_W.flip_nw_se(), CC1.PLAYER_N)
+        self.assertEqual(CC1.PLAYER_S.flip_nw_se(), CC1.PLAYER_E)
+        self.assertEqual(CC1.PLAYER_E.flip_nw_se(), CC1.PLAYER_S)
+
+        # Diagonals
+        self.assertEqual(CC1.ICE_NE.flip_nw_se(), CC1.ICE_NW)
+        self.assertEqual(CC1.ICE_NW.flip_nw_se(), CC1.ICE_NE)
+        self.assertEqual(CC1.ICE_SE.flip_nw_se(), CC1.ICE_SE)  # remains SE
+        self.assertEqual(CC1.ICE_SW.flip_nw_se(), CC1.ICE_SW)  # remains SW
+
+        # FORCE_RANDOM remains unchanged
+        self.assertEqual(CC1.FORCE_RANDOM.flip_nw_se(), CC1.FORCE_RANDOM)
+
+        # Confirm that our flip map aligns with the code
+        for k, v in FLIP_NW_SE_MAP.items():
+            tile_name = f"PLAYER_{k}"
+            if tile_name in CC1.__members__:
+                tile = CC1[tile_name]
+                flipped_tile = tile.flip_nw_se()
+                expected_tile_name = f"PLAYER_{v}"
+                self.assertEqual(flipped_tile.name, expected_tile_name)
+
+    def test_rotation_noops(self):
+        """
+        Test that rotating certain tiles (like FORCE_RANDOM, directionless tiles)
+        leaves them unchanged.
+        """
+        # directionless tiles
+        self.assertEqual(CC1.FLOOR.right(), CC1.FLOOR)
+        self.assertEqual(CC1.FLOOR.left(), CC1.FLOOR)
+        self.assertEqual(CC1.FLOOR.reverse(), CC1.FLOOR)
+
+        # special-cased tile
+        self.assertEqual(CC1.FORCE_RANDOM.right(), CC1.FORCE_RANDOM)
+        self.assertEqual(CC1.FORCE_RANDOM.left(), CC1.FORCE_RANDOM)
+        self.assertEqual(CC1.FORCE_RANDOM.reverse(), CC1.FORCE_RANDOM)
+
+    def test_reverse_is_two_rights(self):
+        """Test that reverse() is indeed two rights in a row."""
+        tile = CC1.PLAYER_N
+        self.assertEqual(tile.reverse(), tile.right().right())
+        self.assertEqual(tile.reverse(), CC1.PLAYER_S)
+
+        tile2 = CC1.ICE_NE
+        self.assertEqual(tile2.reverse(), tile2.right().right())
+        self.assertEqual(tile2.reverse(), CC1.ICE_SW)
 
 class TestCC1Cell(unittest.TestCase):
     """Tests for CC1Cell."""
