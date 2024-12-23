@@ -105,14 +105,14 @@ class TestC2MModifiers(unittest.TestCase):
 
     def test_custom_tiles_parse(self):
         """
-        Test parsing custom tiles (floor/wall) style.
+        Test parsing custom tiles (floor/wall) color.
         """
         tile_id = CC2.CUSTOM_FLOOR
         # Suppose 0 => Green, 1 => Pink, 2 => Yellow, 3 => Blue
         result = C2MModifiers.parse_modifier(tile_id, bytes([2]))
-        self.assertEqual(result["style"], "Yellow")
+        self.assertEqual(result["color"], "Yellow")
 
-        # Invalid style
+        # Invalid color
         with self.assertRaises(ValueError):
             C2MModifiers.parse_modifier(tile_id, bytes([9]))
 
@@ -121,12 +121,12 @@ class TestC2MModifiers(unittest.TestCase):
         Test building custom tile modifiers.
         """
         tile_id = CC2.CUSTOM_FLOOR
-        data = {"style": "Blue"}
+        data = {"color": "Blue"}
         result = C2MModifiers.build_modifier(tile_id, data)
         self.assertEqual(result, bytes([3]))  # 'Blue' => 3
 
-        # Invalid style
-        data_invalid = {"style": "Rainbow"}
+        # Invalid color
+        data_invalid = {"color": "Rainbow"}
         with self.assertRaises(ValueError):
             C2MModifiers.build_modifier(tile_id, data_invalid)
 

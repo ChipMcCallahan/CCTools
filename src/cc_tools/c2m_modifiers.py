@@ -16,8 +16,8 @@ class Direction(IntEnum):
     W = 3
 
 
-class CustomTileStyle(IntEnum):
-    """Represents the possible styles for custom floor/wall tiles."""
+class CustomTileColor(IntEnum):
+    """Represents the possible colors for custom floor/wall tiles."""
     GREEN = 0
     PINK = 1
     YELLOW = 2
@@ -130,11 +130,11 @@ class C2MModifiers:
 
         # -- Custom floor/wall modifier (8-bit) ------------------------------
         elif tile_id in CC2.custom_tiles():
-            style_val = value[0]
+            color_val = value[0]
             try:
-                data["style"] = CustomTileStyle(style_val).name.capitalize()  # e.g. "Green"
+                data["color"] = CustomTileColor(color_val).name.capitalize()  # e.g. "Green"
             except ValueError:
-                raise ValueError(f"Unknown custom tile style value: {style_val}")
+                raise ValueError(f"Unknown custom tile color value: {color_val}")
 
         # -- Logic modifier (8-bit) ------------------------------------------
         elif tile_id == CC2.LOGIC_GATE:
@@ -176,32 +176,34 @@ class C2MModifiers:
 
         # -- Railroad track modifier (16-bit, little endian) -----------------
         elif tile_id == CC2.RAILROAD_TRACK:
-            track_val = value[0] | (value[1] << 8)  # little endian
+            if len(value) not in (1, 2):
+                raise ValueError("Railroad track modifier must be 1 or 2 bytes.")
+
+            # Parse 1 or 2 bytes into track_val
+            track_val = value[0] | (value[1] << 8) if len(value) == 2 else value[0]
             data["track_value"] = track_val
 
             low_byte = track_val & 0xFF
             high_byte = (track_val >> 8) & 0xFF
 
             # Track segments in the low byte
-            segments = []
-            for seg_enum in TrackSegment:
-                if low_byte & seg_enum.value:
-                    segments.append(seg_enum.name)
-            data["tracks"] = segments
+            data["tracks"] = [seg.name for seg in TrackSegment if (low_byte & seg.value)]
 
-            # Active track in lower nibble of high_byte
+            # Active track in the lower nibble of high_byte
             active_nibble = high_byte & 0x0F
-            try:
-                data["active_track"] = ActiveTrack(active_nibble).name
-            except ValueError:
-                data["active_track"] = "Unknown"
+            data["active_track"] = (
+                ActiveTrack(active_nibble).name
+                if active_nibble in ActiveTrack._value2member_map_
+                else None
+            )
 
-            # Initial entry direction in upper nibble of high_byte
+            # Initial entry direction in the upper nibble of high_byte
             entered_nibble = (high_byte >> 4) & 0x0F
-            try:
-                data["initial_entry"] = Direction(entered_nibble).name
-            except ValueError:
-                data["initial_entry"] = "Unknown"
+            data["initial_entry"] = (
+                Direction(entered_nibble).name
+                if entered_nibble in Direction._value2member_map_
+                else None
+            )
 
         else:
             raise ValueError(f"Cannot apply modifier to tile with id={tile_id}")
@@ -258,14 +260,14 @@ class C2MModifiers:
 
         # -- Custom floor/wall modifier (8-bit) ------------------------------
         elif tile_id in CC2.custom_tiles():
-            style_str = data.get("style", "")
+            color_str = data.get("color", "")
             # We expect "Green", "Pink", "Yellow", "Blue" (capitalized from enum.name)
             # Attempt to match an enum:
             try:
-                style_val = CustomTileStyle[style_str.upper()].value
+                color_val = CustomTileColor[color_str.upper()].value
             except KeyError:
-                raise ValueError(f"Unknown custom tile style: {style_str}")
-            return bytes([style_val])
+                raise ValueError(f"Unknown custom tile color: {color_str}")
+            return bytes([color_val])
 
         # -- Logic modifier (8-bit) ------------------------------------------
         elif tile_id == CC2.LOGIC_GATE:
