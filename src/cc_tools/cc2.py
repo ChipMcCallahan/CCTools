@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class CC2(Enum):
     """
     An enumeration of tiles and objects used in Chip's Challenge 2 (CC2).
@@ -12,152 +13,152 @@ class CC2(Enum):
     there is overlap).
     """
 
-    FLOOR = 0x01          # Basic floor tile.
-    WALL = 0x02           # Standard wall tile.
-    ICE = 0x03            # Ice floor tile (causes sliding).
-    ICE_SW = 0x04         # Southwest ice corner.
-    ICE_NW = 0x05         # Northwest ice corner.
-    ICE_NE = 0x06         # Northeast ice corner.
-    ICE_SE = 0x07         # Southeast ice corner.
-    WATER = 0x08          # Water tile (requires flippers to cross safely).
-    FIRE = 0x09           # Fire tile (requires fire boots to cross safely).
-    FORCE_N = 0x0A        # Force floor pushing north.
-    FORCE_E = 0x0B        # Force floor pushing east.
-    FORCE_S = 0x0C        # Force floor pushing south.
-    FORCE_W = 0x0D        # Force floor pushing west.
-    GREEN_TOGGLE_WALL = 0x0E   # Wall controlled by green toggle switch.
+    FLOOR = 0x01  # Basic floor tile.
+    WALL = 0x02  # Standard wall tile.
+    ICE = 0x03  # Ice floor tile (causes sliding).
+    ICE_SW = 0x04  # Southwest ice corner.
+    ICE_NW = 0x05  # Northwest ice corner.
+    ICE_NE = 0x06  # Northeast ice corner.
+    ICE_SE = 0x07  # Southeast ice corner.
+    WATER = 0x08  # Water tile (requires flippers to cross safely).
+    FIRE = 0x09  # Fire tile (requires fire boots to cross safely).
+    FORCE_N = 0x0A  # Force floor pushing north.
+    FORCE_E = 0x0B  # Force floor pushing east.
+    FORCE_S = 0x0C  # Force floor pushing south.
+    FORCE_W = 0x0D  # Force floor pushing west.
+    GREEN_TOGGLE_WALL = 0x0E  # Wall controlled by green toggle switch.
     GREEN_TOGGLE_FLOOR = 0x0F  # Floor controlled by green toggle switch.
-    RED_TELEPORT = 0x10         # Teleport tile (red).
-    BLUE_TELEPORT = 0x11        # Teleport tile (blue).
-    YELLOW_TELEPORT = 0x12      # Teleport tile (yellow).
-    GREEN_TELEPORT = 0x13       # Teleport tile (green).
-    EXIT = 0x14                 # Exit tile.
-    SLIME = 0x15                # Slime floor tile.
-    CHIP = 0x16                 # Chip character.
-    DIRT_BLOCK = 0x17           # Movable dirt block.
-    WALKER = 0x18               # Walker enemy.
-    GLIDER = 0x19               # Glider enemy.
-    ICE_BLOCK = 0x1A            # Movable ice block.
-    THIN_WALL_S = 0x1B          # Thin wall facing south (CC1 legacy).
-    THIN_WALL_E = 0x1C          # Thin wall facing east (CC1 legacy).
-    THIN_WALL_SE = 0x1D         # Thin wall southeast corner (CC1 legacy).
-    GRAVEL = 0x1E               # Gravel floor.
-    GREEN_BUTTON = 0x1F         # Green button (activates green toggles).
-    BLUE_BUTTON = 0x20          # Blue button (activates blue tanks).
-    BLUE_TANK = 0x21            # Blue tank enemy (change direction on blue button press).
-    RED_DOOR = 0x22             # Red door (requires red key).
-    BLUE_DOOR = 0x23            # Blue door (requires blue key).
-    YELLOW_DOOR = 0x24          # Yellow door (requires yellow key).
-    GREEN_DOOR = 0x25           # Green door (requires green key).
-    RED_KEY = 0x26              # Red key.
-    BLUE_KEY = 0x27             # Blue key.
-    YELLOW_KEY = 0x28           # Yellow key.
-    GREEN_KEY = 0x29            # Green key.
-    IC_CHIP = 0x2A              # Integrated circuit chip (collectible).
-    EXTRA_IC_CHIP = 0x2B        # Extra (bonus) integrated circuit chip.
-    CHIP_SOCKET = 0x2C          # Socket that requires IC chips to pass.
-    POPUP_WALL = 0x2D           # Pop-up wall.
-    APPEARING_WALL = 0x2E       # Appearing wall (reveals permanently when bumped).
-    INVISIBLE_WALL = 0x2F       # Invisible wall (reveals temporarily when bumped).
-    SOLID_BLUE_WALL = 0x30      # A blue wall that is solid.
-    FALSE_BLUE_WALL = 0x31      # A blue wall that can be passed (fake).
-    DIRT = 0x32                 # Dirt floor tile.
-    ANT = 0x33                  # Ant enemy.
-    CENTIPEDE = 0x34            # Centipede enemy.
-    BALL = 0x35                 # Ball enemy.
-    BLOB = 0x36                 # Blob enemy.
-    RED_TEETH = 0x37            # Red teeth (enemy).
-    FIREBALL = 0x38             # Fireball enemy.
-    RED_BUTTON = 0x39           # Red button (activates clone machines).
-    BROWN_BUTTON = 0x3A         # Brown button (activates traps).
-    CLEATS = 0x3B               # Cleats item (prevents sliding on ice).
-    SUCTION_BOOTS = 0x3C        # Suction boots item (prevents sliding on force floors).
-    FIRE_BOOTS = 0x3D           # Fire boots item (walk on fire safely).
-    FLIPPERS = 0x3E             # Flippers item (swim in water).
-    TOOL_THIEF = 0x3F           # Thief that steals tools/boots.
-    BOMB = 0x40                 # Bomb (explodes on contact).
-    OPEN_TRAP = 0x41            # Open trap (unused).
-    TRAP = 0x42                 # Trap (can hold creatures).
-    CLONE_MACHINE_OLD = 0x43    # Old clone machine (CC1 legacy).
-    CLONE_MACHINE = 0x44         # Modern clone machine (CC2).
-    CLUE = 0x45                  # Clue item (displays message).
-    FORCE_RANDOM = 0x46          # Random force floor (pushes in random directions).
-    GRAY_BUTTON = 0x47           # Gray button (area effect).
-    SWIVEL_DOOR_SW = 0x48        # Swivel door corner (southwest).
-    SWIVEL_DOOR_NW = 0x49        # Swivel door corner (northwest).
-    SWIVEL_DOOR_NE = 0x4A        # Swivel door corner (northeast).
-    SWIVEL_DOOR_SE = 0x4B        # Swivel door corner (southeast).
-    TIME_BONUS = 0x4C            # Time bonus item.
-    STOPWATCH = 0x4D             # Stopwatch item (pauses/unpauses time).
-    TRANSMOGRIFIER = 0x4E        # Transmogrifier (toggles Chip <--> Melinda).
-    RAILROAD_TRACK = 0x4F        # Railroad track tile.
-    STEEL_WALL = 0x50            # Steel wall (indestructible).
-    TNT = 0x51                   # TNT item.
-    HELMET = 0x52                # Helmet item.
-    UNUSED_53 = 0x53             # Unused tile placeholder.
-    UNUSED_54 = 0x54             # Unused tile placeholder.
-    UNUSED_55 = 0x55             # Unused tile placeholder.
-    MELINDA = 0x56               # Melinda character.
-    BLUE_TEETH = 0x57            # Blue teeth enemy.
-    EXPLOSION_ANIMATION = 0x58   # Explosion animation (unused).
-    HIKING_BOOTS = 0x59          # Hiking boots item (walk on gravel/slime).
-    MALE_ONLY_SIGN = 0x5A        # Indicates path only for Chip (male).
-    FEMALE_ONLY_SIGN = 0x5B      # Indicates path only for Melinda (female).
-    LOGIC_GATE = 0x5C            # Logic gate object (various uses in CC2 editor).
-    UNUSED_5D = 0x5D             # Unused tile placeholder.
-    PINK_BUTTON = 0x5E           # Pink button (activates wires).
-    FLAME_JET_OFF = 0x5F         # Flame jet tile (off state).
-    FLAME_JET_ON = 0x60          # Flame jet tile (on state).
-    ORANGE_BUTTON = 0x61         # Orange button (toggles flame jets).
-    LIGHTNING_BOLT = 0x62        # Lightning bolt item (activates wires).
-    YELLOW_TANK = 0x63           # Yellow tank enemy.
-    YELLOW_TANK_BUTTON = 0x64    # Button associated with yellow tank.
-    MIRROR_CHIP = 0x65           # 'Mirror' version of Chip.
-    MIRROR_MELINDA = 0x66        # 'Mirror' version of Melinda.
-    UNUSED_67 = 0x67             # Unused tile placeholder.
-    BOWLING_BALL = 0x68          # Bowling ball item (throwable).
-    ROVER = 0x69                 # Rover enemy (moves in complicated patterns).
-    TIME_PENALTY = 0x6A          # Time penalty tile/item.
-    CUSTOM_FLOOR = 0x6B          # Custom floor (editor-defined).
-    UNUSED_6C = 0x6C             # Unused tile placeholder.
-    THIN_WALL_CANOPY = 0x6D      # Thin wall/canopy.
-    UNUSED_6E = 0x6E             # Unused tile placeholder.
-    RAILROAD_SIGN = 0x6F         # Railroad sign item.
-    CUSTOM_WALL = 0x70           # Custom wall (editor-defined).
-    LETTER_TILE_SPACE = 0x71     # Space for a letter tile.
-    PURPLE_TOGGLE_FLOOR = 0x72   # Floor controlled by wires or grey button.
-    PURPLE_TOGGLE_WALL = 0x73    # Wall controlled by wires or grey button.
-    UNUSED_74 = 0x74             # Unused tile placeholder.
-    UNUSED_75 = 0x75             # Unused tile placeholder.
-    MODIFIER_8BIT = 0x76         # Modifier (8-bit).
-    MODIFIER_16BIT = 0x77        # Modifier (16-bit).
-    MODIFIER_32BIT = 0x78        # Modifier (32-bit).
-    UNUSED_79 = 0x79             # Unused tile placeholder (invalid).
-    FLAG_10 = 0x7A               # Bonus flag with value 10.
-    FLAG_100 = 0x7B              # Bonus flag with value 100.
-    FLAG_1000 = 0x7C             # Bonus flag with value 1000.
-    SOLID_GREEN_WALL = 0x7D      # A green wall that is solid.
-    FALSE_GREEN_WALL = 0x7E      # A green wall that is fake (passable).
-    NOT_ALLOWED_MARKER = 0x7F    # Marker indicating something is not allowed.
-    FLAG_2X = 0x80               # Flag with multiplier value x2.
-    DIRECTIONAL_BLOCK = 0x81     # A movable block that has a facing/direction.
-    FLOOR_MIMIC = 0x82           # Enemy that mimics floor.
-    GREEN_BOMB = 0x83            # Bomb that toggles between bomb and chip states.
-    GREEN_CHIP = 0x84            # Chip that toggles between chip and bomb states.
-    UNUSED_85 = 0x85             # Unused tile placeholder.
-    UNUSED_86 = 0x86             # Unused tile placeholder.
-    BLACK_BUTTON = 0x87          # Black button (deactivates wires).
-    SWITCH_OFF = 0x88            # Switch in "off" state (toggle).
-    SWITCH_ON = 0x89             # Switch in "on" state (toggle).
-    KEY_THIEF = 0x8A             # Thief that steals keys.
-    GHOST = 0x8B                 # Ghost enemy (moves through walls).
-    STEEL_FOIL = 0x8C            # Steel foil item (turns walls into steel walls).
-    TURTLE = 0x8D                # Turtle (turns into water on exit).
-    SECRET_EYE = 0x8E            # Secret eye item (reveals secrets).
-    BRIBE = 0x8F                 # Bribe item (bypass thief actions).
-    SPEED_BOOTS = 0x90           # Speed boots item (move faster).
-    UNUSED_91 = 0x91             # Unused tile placeholder.
-    HOOK = 0x92                  # Hook item (pull blocks).
+    RED_TELEPORT = 0x10  # Teleport tile (red).
+    BLUE_TELEPORT = 0x11  # Teleport tile (blue).
+    YELLOW_TELEPORT = 0x12  # Teleport tile (yellow).
+    GREEN_TELEPORT = 0x13  # Teleport tile (green).
+    EXIT = 0x14  # Exit tile.
+    SLIME = 0x15  # Slime floor tile.
+    CHIP = 0x16  # Chip character.
+    DIRT_BLOCK = 0x17  # Movable dirt block.
+    WALKER = 0x18  # Walker enemy.
+    GLIDER = 0x19  # Glider enemy.
+    ICE_BLOCK = 0x1A  # Movable ice block.
+    THIN_WALL_S = 0x1B  # Thin wall facing south (CC1 legacy).
+    THIN_WALL_E = 0x1C  # Thin wall facing east (CC1 legacy).
+    THIN_WALL_SE = 0x1D  # Thin wall southeast corner (CC1 legacy).
+    GRAVEL = 0x1E  # Gravel floor.
+    GREEN_BUTTON = 0x1F  # Green button (activates green toggles).
+    BLUE_BUTTON = 0x20  # Blue button (activates blue tanks).
+    BLUE_TANK = 0x21  # Blue tank enemy (change direction on blue button press).
+    RED_DOOR = 0x22  # Red door (requires red key).
+    BLUE_DOOR = 0x23  # Blue door (requires blue key).
+    YELLOW_DOOR = 0x24  # Yellow door (requires yellow key).
+    GREEN_DOOR = 0x25  # Green door (requires green key).
+    RED_KEY = 0x26  # Red key.
+    BLUE_KEY = 0x27  # Blue key.
+    YELLOW_KEY = 0x28  # Yellow key.
+    GREEN_KEY = 0x29  # Green key.
+    IC_CHIP = 0x2A  # Integrated circuit chip (collectible).
+    EXTRA_IC_CHIP = 0x2B  # Extra (bonus) integrated circuit chip.
+    CHIP_SOCKET = 0x2C  # Socket that requires IC chips to pass.
+    POPUP_WALL = 0x2D  # Pop-up wall.
+    APPEARING_WALL = 0x2E  # Appearing wall (reveals permanently when bumped).
+    INVISIBLE_WALL = 0x2F  # Invisible wall (reveals temporarily when bumped).
+    SOLID_BLUE_WALL = 0x30  # A blue wall that is solid.
+    FALSE_BLUE_WALL = 0x31  # A blue wall that can be passed (fake).
+    DIRT = 0x32  # Dirt floor tile.
+    ANT = 0x33  # Ant enemy.
+    CENTIPEDE = 0x34  # Centipede enemy.
+    BALL = 0x35  # Ball enemy.
+    BLOB = 0x36  # Blob enemy.
+    RED_TEETH = 0x37  # Red teeth (enemy).
+    FIREBALL = 0x38  # Fireball enemy.
+    RED_BUTTON = 0x39  # Red button (activates clone machines).
+    BROWN_BUTTON = 0x3A  # Brown button (activates traps).
+    CLEATS = 0x3B  # Cleats item (prevents sliding on ice).
+    SUCTION_BOOTS = 0x3C  # Suction boots item (prevents sliding on force floors).
+    FIRE_BOOTS = 0x3D  # Fire boots item (walk on fire safely).
+    FLIPPERS = 0x3E  # Flippers item (swim in water).
+    TOOL_THIEF = 0x3F  # Thief that steals tools/boots.
+    BOMB = 0x40  # Bomb (explodes on contact).
+    OPEN_TRAP = 0x41  # Open trap (unused).
+    TRAP = 0x42  # Trap (can hold creatures).
+    CLONE_MACHINE_OLD = 0x43  # Old clone machine (CC1 legacy).
+    CLONE_MACHINE = 0x44  # Modern clone machine (CC2).
+    CLUE = 0x45  # Clue item (displays message).
+    FORCE_RANDOM = 0x46  # Random force floor (pushes in random directions).
+    GRAY_BUTTON = 0x47  # Gray button (area effect).
+    SWIVEL_DOOR_SW = 0x48  # Swivel door corner (southwest).
+    SWIVEL_DOOR_NW = 0x49  # Swivel door corner (northwest).
+    SWIVEL_DOOR_NE = 0x4A  # Swivel door corner (northeast).
+    SWIVEL_DOOR_SE = 0x4B  # Swivel door corner (southeast).
+    TIME_BONUS = 0x4C  # Time bonus item.
+    STOPWATCH = 0x4D  # Stopwatch item (pauses/unpauses time).
+    TRANSMOGRIFIER = 0x4E  # Transmogrifier (toggles Chip <--> Melinda).
+    RAILROAD_TRACK = 0x4F  # Railroad track tile.
+    STEEL_WALL = 0x50  # Steel wall (indestructible).
+    TNT = 0x51  # TNT item.
+    HELMET = 0x52  # Helmet item.
+    UNUSED_53 = 0x53  # Unused tile placeholder.
+    UNUSED_54 = 0x54  # Unused tile placeholder.
+    UNUSED_55 = 0x55  # Unused tile placeholder.
+    MELINDA = 0x56  # Melinda character.
+    BLUE_TEETH = 0x57  # Blue teeth enemy.
+    EXPLOSION_ANIMATION = 0x58  # Explosion animation (unused).
+    HIKING_BOOTS = 0x59  # Hiking boots item (walk on gravel/slime).
+    MALE_ONLY_SIGN = 0x5A  # Indicates path only for Chip (male).
+    FEMALE_ONLY_SIGN = 0x5B  # Indicates path only for Melinda (female).
+    LOGIC_GATE = 0x5C  # Logic gate object (various uses in CC2 editor).
+    UNUSED_5D = 0x5D  # Unused tile placeholder.
+    PINK_BUTTON = 0x5E  # Pink button (activates wires).
+    FLAME_JET_OFF = 0x5F  # Flame jet tile (off state).
+    FLAME_JET_ON = 0x60  # Flame jet tile (on state).
+    ORANGE_BUTTON = 0x61  # Orange button (toggles flame jets).
+    LIGHTNING_BOLT = 0x62  # Lightning bolt item (activates wires).
+    YELLOW_TANK = 0x63  # Yellow tank enemy.
+    YELLOW_TANK_BUTTON = 0x64  # Button associated with yellow tank.
+    MIRROR_CHIP = 0x65  # 'Mirror' version of Chip.
+    MIRROR_MELINDA = 0x66  # 'Mirror' version of Melinda.
+    UNUSED_67 = 0x67  # Unused tile placeholder.
+    BOWLING_BALL = 0x68  # Bowling ball item (throwable).
+    ROVER = 0x69  # Rover enemy (moves in complicated patterns).
+    TIME_PENALTY = 0x6A  # Time penalty tile/item.
+    CUSTOM_FLOOR = 0x6B  # Custom floor (editor-defined).
+    UNUSED_6C = 0x6C  # Unused tile placeholder.
+    THIN_WALL_CANOPY = 0x6D  # Thin wall/canopy.
+    UNUSED_6E = 0x6E  # Unused tile placeholder.
+    RAILROAD_SIGN = 0x6F  # Railroad sign item.
+    CUSTOM_WALL = 0x70  # Custom wall (editor-defined).
+    LETTER_TILE_SPACE = 0x71  # Space for a letter tile.
+    PURPLE_TOGGLE_FLOOR = 0x72  # Floor controlled by wires or grey button.
+    PURPLE_TOGGLE_WALL = 0x73  # Wall controlled by wires or grey button.
+    UNUSED_74 = 0x74  # Unused tile placeholder.
+    UNUSED_75 = 0x75  # Unused tile placeholder.
+    MODIFIER_8BIT = 0x76  # Modifier (8-bit).
+    MODIFIER_16BIT = 0x77  # Modifier (16-bit).
+    MODIFIER_32BIT = 0x78  # Modifier (32-bit).
+    UNUSED_79 = 0x79  # Unused tile placeholder (invalid).
+    FLAG_10 = 0x7A  # Bonus flag with value 10.
+    FLAG_100 = 0x7B  # Bonus flag with value 100.
+    FLAG_1000 = 0x7C  # Bonus flag with value 1000.
+    SOLID_GREEN_WALL = 0x7D  # A green wall that is solid.
+    FALSE_GREEN_WALL = 0x7E  # A green wall that is fake (passable).
+    NOT_ALLOWED_MARKER = 0x7F  # Marker indicating something is not allowed.
+    FLAG_2X = 0x80  # Flag with multiplier value x2.
+    DIRECTIONAL_BLOCK = 0x81  # A movable block that has a facing/direction.
+    FLOOR_MIMIC = 0x82  # Enemy that mimics floor.
+    GREEN_BOMB = 0x83  # Bomb that toggles between bomb and chip states.
+    GREEN_CHIP = 0x84  # Chip that toggles between chip and bomb states.
+    UNUSED_85 = 0x85  # Unused tile placeholder.
+    UNUSED_86 = 0x86  # Unused tile placeholder.
+    BLACK_BUTTON = 0x87  # Black button (deactivates wires).
+    SWITCH_OFF = 0x88  # Switch in "off" state (toggle).
+    SWITCH_ON = 0x89  # Switch in "on" state (toggle).
+    KEY_THIEF = 0x8A  # Thief that steals keys.
+    GHOST = 0x8B  # Ghost enemy (moves through walls).
+    STEEL_FOIL = 0x8C  # Steel foil item (turns walls into steel walls).
+    TURTLE = 0x8D  # Turtle (turns into water on exit).
+    SECRET_EYE = 0x8E  # Secret eye item (reveals secrets).
+    BRIBE = 0x8F  # Bribe item (bypass thief actions).
+    SPEED_BOOTS = 0x90  # Speed boots item (move faster).
+    UNUSED_91 = 0x91  # Unused tile placeholder.
+    HOOK = 0x92  # Hook item (pull blocks).
 
     def dirs(self):
         """
@@ -318,7 +319,8 @@ class CC2(Enum):
         :return: A set of walls.
         :rtype: set
         """
-        return {cls.WALL, cls.STEEL_WALL, cls.SOLID_GREEN_WALL, cls.SOLID_BLUE_WALL, cls.CUSTOM_WALL} | cls.invisible_walls()
+        return {cls.WALL, cls.STEEL_WALL, cls.SOLID_GREEN_WALL, cls.SOLID_BLUE_WALL,
+                cls.CUSTOM_WALL} | cls.invisible_walls()
 
     @classmethod
     def panels(cls):
@@ -708,3 +710,8 @@ class CC2(Enum):
     @classmethod
     def custom_tiles(cls):
         return {cls.CUSTOM_WALL, cls.CUSTOM_FLOOR}
+
+    @classmethod
+    def modified_tiles(cls):
+        return cls.wired() | cls.custom_tiles() | {CC2.LETTER_TILE_SPACE, CC2.CLONE_MACHINE, CC2.RAILROAD_TRACK,
+                                                   CC2.LOGIC_GATE}
