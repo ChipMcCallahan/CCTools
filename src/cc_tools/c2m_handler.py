@@ -35,7 +35,7 @@ Classes:
 """
 
 from collections import defaultdict, namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from enum import Enum
 from typing import Optional, List
 
@@ -62,6 +62,14 @@ class C2MElement:
     tracks: Optional[List[str]] = None
     active_track: Optional[str] = None
     initial_entry: Optional[str] = None
+
+    def __repr__(self) -> str:
+        included = []
+        for f in fields(self):  # type: ignore
+            val = getattr(self, f.name)
+            if val is not None:
+                included.append(f"{f.name}={val!r}")
+        return f"{self.__class__.__name__}({', '.join(included)})"
 
 class C2MConstants:
     """
