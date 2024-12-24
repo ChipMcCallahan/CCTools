@@ -1,10 +1,8 @@
 import unittest
-from typing import List
 from cc_tools.cc2 import CC2
-from cc_tools.c2m_handler import C2MElement
-from cc_tools.c2m_modifiers import (
-    C2MModifiers,
-)
+from cc_tools.c2m_element import C2MElement
+from cc_tools.c2m_modifiers import C2MModifiers
+
 
 class TestC2MModifiers(unittest.TestCase):
     """

@@ -1,6 +1,6 @@
 from enum import Enum, IntEnum
 
-from .c2m_handler import C2MElement
+from .c2m_element import C2MElement
 from .cc2 import CC2
 
 # ------------------------------------------------
