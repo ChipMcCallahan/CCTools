@@ -479,7 +479,7 @@ class CC2(Enum):
         :return: A set of pickup tiles.
         :rtype: set
         """
-        return cls.keys() | cls.tools() | cls.flags() | cls.time_pickups() | cls.bombs()
+        return cls.keys() | cls.tools() | cls.flags() | cls.time_pickups() | cls.bombs() | cls.all_chips()
 
     @classmethod
     def blue_walls(cls):
