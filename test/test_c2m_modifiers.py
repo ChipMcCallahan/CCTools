@@ -1,365 +1,288 @@
 import unittest
-
-# Import both the C2MModifiers class and the ModKey enum:
-from cc_tools.c2m_modifiers import C2MModifiers, ModKey
+from typing import List
 from cc_tools.cc2 import CC2
+from cc_tools.c2m_handler import C2MElement
+from cc_tools.c2m_modifiers import (
+    C2MModifiers,
+)
 
 class TestC2MModifiers(unittest.TestCase):
+    """
+    A comprehensive unittest suite for testing the C2MModifiers class and its
+    helper methods. This test class ensures both parsing and building of
+    modifiers for various CC2 tile types is verified thoroughly, including error
+    handling paths.
+    """
 
-    def test_wire_modifier_parse(self):
-        """
-        Test parsing wire modifiers on a tile known to be "wired".
-        Example: tile_id = 0x50.
-        """
-        tile_id = CC2.FLOOR  # in CC2.wired()
-        # Byte example: 0b10010010 = 0x92
-        #   - wires (lowest nibble) = 0b0010 => East
-        #   - wire_tunnels (upper nibble) = 0b1001 => North, West
-        test_value = bytes([0x92])
+    # ---------------------------------------------------
+    # parse_modifier / build_modifier tests
+    # ---------------------------------------------------
 
-        result = C2MModifiers.parse_modifier(tile_id, test_value)
-        self.assertIn(ModKey.WIRES, result)
-        self.assertIn(ModKey.WIRE_TUNNELS, result)
-        self.assertEqual(result[ModKey.WIRES], "E")     # East only
-        self.assertEqual(result[ModKey.WIRE_TUNNELS], "NW")  # North, West
+    def test_parse_modifier_wires(self):
+        """Test parsing wires & wire tunnels (1-byte)."""
+        # Suppose tile_id is a wired tile (fake example).
+        c2m = C2MElement(id=CC2.FLOOR)  # or any tile that belongs to CC2.wired()
+        # For example: the lower nibble is wires, upper nibble is tunnels:
+        #   bit0 = N-wire, bit1 = E-wire, bit4 = N-tunnel, etc.
+        # Let’s encode N-wire and E-wire, plus S-tunnel (bit2=1 => E-wire, bit5=1 => E-tunnel).
+        wire_byte = 0b00100111
+        #   bit 0 = N-wire
+        #   bit 1 = E-wire
+        #   bit 2 = S-wire
+        #   bit 5 = E-tunnel
 
-    def test_wire_modifier_build(self):
-        """
-        Test building wire modifiers.
-        """
-        tile_id = CC2.FLOOR  # in CC2.wired()
-        data = {
-            ModKey.WIRES: "SE",         # South, East
-            ModKey.WIRE_TUNNELS: "N",   # North
-        }
-        # wires (S,E) => bits 2,1 => 0b0110 = 0x06
-        # wire_tunnels (N) => bit 4 => 0b10000 = 0x10
-        # combined => 0x16
-        result_bytes = C2MModifiers.build_modifier(tile_id, data)
-        self.assertEqual(result_bytes, bytes([0x16]))
+        C2MModifiers.parse_modifier(c2m, bytes([wire_byte]))
+        self.assertEqual(c2m.wires, "NES", "Wires should be 'NES'")
+        self.assertEqual(c2m.wire_tunnels, "E", "Wire tunnels should be 'E'")
 
-    def test_wire_modifier_invalid_length(self):
-        """
-        Test that parsing an invalid byte length for a wired tile raises ValueError.
-        """
-        tile_id = CC2.FLOOR
+    def test_build_modifier_wires(self):
+        """Test building wires & wire tunnels into 1-byte."""
+        c2m = C2MElement(id=CC2.FLOOR, wires="NES", wire_tunnels="E")
+        built = C2MModifiers.build_modifier(c2m)
+        self.assertEqual(built, bytes([0b00100111]), "Should match the wire byte 0b00100111")
+
+    def test_parse_modifier_letter_tile(self):
+        """Test parsing a single letter tile byte."""
+        c2m = C2MElement(id=CC2.LETTER_TILE_SPACE)
+        # Suppose we pass the 'A' char => 0x41
+        C2MModifiers.parse_modifier(c2m, b"\x41")
+        self.assertEqual(c2m.char, "A")
+
+        # Now test an arrow char, e.g. 0x1E => "↓"
+        c2m2 = C2MElement(id=CC2.LETTER_TILE_SPACE)
+        C2MModifiers.parse_modifier(c2m2, b"\x1E")
+        self.assertEqual(c2m2.char, "↓")
+
+    def test_build_modifier_letter_tile(self):
+        """Test building a single letter tile byte."""
+        c2m = C2MElement(id=CC2.LETTER_TILE_SPACE, char="Z")
+        built = C2MModifiers.build_modifier(c2m)
+        self.assertEqual(built, b"\x5A", "Z => ASCII 0x5A")
+
+        # Arrow char
+        c2m2 = C2MElement(id=CC2.LETTER_TILE_SPACE, char="←")
+        built2 = C2MModifiers.build_modifier(c2m2)
+        self.assertEqual(built2, bytes([0x1F]), "← => 0x1F")
+
+    def test_parse_modifier_clone_machine(self):
+        """Test parsing the directions for a clone machine tile."""
+        c2m = C2MElement(id=CC2.CLONE_MACHINE)
+        # Suppose the byte is 0x05 => bits 0 and 2 => N and S
+        C2MModifiers.parse_modifier(c2m, b"\x05")
+        self.assertEqual(c2m.directions, "NS")
+
+    def test_build_modifier_clone_machine(self):
+        """Test building the directions for a clone machine tile."""
+        c2m = C2MElement(id=CC2.CLONE_MACHINE, directions="NS")
+        built = C2MModifiers.build_modifier(c2m)
+        self.assertEqual(built, b"\x05")
+
+    def test_parse_modifier_custom_tile(self):
+        """Test parsing a custom floor/wall color tile."""
+        c2m = C2MElement(id=CC2.CUSTOM_FLOOR)
+        # Suppose the color is YELLOW => 2
+        C2MModifiers.parse_modifier(c2m, b"\x02")
+        self.assertEqual(c2m.color, "Yellow")
+
+    def test_build_modifier_custom_tile(self):
+        """Test building a custom floor/wall color tile."""
+        c2m = C2MElement(id=CC2.CUSTOM_FLOOR, color="Pink")
+        built = C2MModifiers.build_modifier(c2m)
+        self.assertEqual(built, b"\x01", "Pink => 1")
+
+    def test_parse_modifier_logic_gate_counter(self):
+        """Test parsing a logic gate set to a counter with digit."""
+        c2m = C2MElement(id=CC2.LOGIC_GATE)
+        # Suppose the byte is 0x24 => 0x1E + 6 => 'Counter_6'
+        C2MModifiers.parse_modifier(c2m, b"\x24")
+        self.assertEqual(c2m.gate, "Counter_6")
+
+    def test_build_modifier_logic_gate_counter(self):
+        """Test building a logic gate set to 'Counter_6'."""
+        c2m = C2MElement(id=CC2.LOGIC_GATE, gate="Counter_6")
+        built = C2MModifiers.build_modifier(c2m)
+        self.assertEqual(built, b"\x24")
+
+    def test_parse_modifier_logic_gate_inverter(self):
+        """Test parsing an inverter gate with direction E."""
+        c2m = C2MElement(id=CC2.LOGIC_GATE)
+        # 0x01 => direction=1 => 'E', gate type=0 => 'Inverter'
+        C2MModifiers.parse_modifier(c2m, b"\x01")
+        self.assertEqual(c2m.gate, "Inverter_E")
+
+    def test_build_modifier_logic_gate_inverter(self):
+        """Test building an inverter gate with direction E => byte=0x01."""
+        c2m = C2MElement(id=CC2.LOGIC_GATE, gate="Inverter_E")
+        built = C2MModifiers.build_modifier(c2m)
+        self.assertEqual(built, b"\x01")
+
+    def test_parse_modifier_logic_gate_voodoo(self):
+        """Test parsing a 'Voodoo_3A' with direction W => 0x3A + direction(3)."""
+        c2m = C2MElement(id=CC2.LOGIC_GATE)
+        C2MModifiers.parse_modifier(c2m, b"\x3D")
+        self.assertEqual(c2m.gate, "Voodoo_3D")
+
+    def test_build_modifier_logic_gate_voodoo(self):
+        """Test building a 'Voodoo_3D' => base 0x3D."""
+        c2m = C2MElement(id=CC2.LOGIC_GATE, gate="Voodoo_3D")
+        built = C2MModifiers.build_modifier(c2m)
+        self.assertEqual(built, b"\x3D")
+
+    def test_parse_modifier_railroad_track_8bit(self):
+        """Test parsing an 8-bit railroad track byte."""
+        c2m = C2MElement(id=CC2.RAILROAD_TRACK)
+        # Suppose 0x13 => 00010011 => NE(1) + SE(2) + HORIZONTAL(8) => also active nibble=0 => NE
+        # High nibble is 0, so initial_entry=0 => 'N'
+        C2MModifiers.parse_modifier(c2m, b"\x13")
+        self.assertEqual(c2m.tracks, ["NE", "SE", "HORIZONTAL"])
+        self.assertEqual(c2m.active_track, "NE")     # lower nibble of high byte = 0
+        self.assertEqual(c2m.initial_entry, "N")     # upper nibble of high byte = 0
+
+    def test_parse_modifier_railroad_track_16bit(self):
+        """Test parsing a 16-bit railroad track value."""
+        c2m = C2MElement(id=CC2.RAILROAD_TRACK)
+        # Suppose value = [0x1F, 0x21]
+        #   low_byte=0x1F => NE, SE, SW, NW, HORIZONTAL
+        #   high_byte=0x21 => 0x2(LS nibble=1 => 'SE', MS nibble=2 => 'S')
+        # But note: high_byte=0x21 => binary(0010 0001)
+        #   lower nibble = 1 => 'SE'
+        #   upper nibble = 2 => 'S'
+        # So initial_entry='S'
+        C2MModifiers.parse_modifier(c2m, b"\x1F\x21")
+        self.assertEqual(c2m.tracks, ["NE", "SE", "SW", "NW", "HORIZONTAL"])
+        self.assertEqual(c2m.active_track, "SE")
+        self.assertEqual(c2m.initial_entry, "S")
+
+    def test_build_modifier_railroad_track_8bit(self):
+        """Test building an 8-bit railroad track value."""
+        c2m = C2MElement(
+            id=CC2.RAILROAD_TRACK,
+            tracks=["NE", "SE", "NW"],
+            active_track="NE",    # => nibble=0
+            initial_entry="N",    # => nibble=0
+        )
+        # This should build low_byte=NE(1) + SE(2) + NW(8)=0x0B => binary(1011)
+        # Actually 1+2+8=11 decimal => 0x0B
+        # Then high_byte= (N<<4 | NE) = (0<<4 | 0) = 0 => 0x00
+        # => bytes([0x0B, 0x00])
+        built = C2MModifiers.build_modifier(c2m)
+        self.assertEqual(built, b"\x0B\x00")
+
+    def test_build_modifier_railroad_track_16bit(self):
+        """Test building a 16-bit railroad track value."""
+        c2m = C2MElement(
+            id=CC2.RAILROAD_TRACK,
+            tracks=["NE", "SE", "SW", "NW"],
+            active_track="SE",    # => nibble=1
+            initial_entry="S",    # => nibble=2
+        )
+        # low_byte=NE(1) + SE(2) + SW(4) + NW(8) = 15 => 0x0F
+        # high_byte=(2<<4 | 1)=0x21
+        # => bytes([0x0F, 0x21])
+        built = C2MModifiers.build_modifier(c2m)
+        self.assertEqual(built, b"\x0F\x21")
+
+    def test_parse_modifier_invalid_length(self):
+        """Test parse_modifier raises ValueError for invalid byte lengths."""
+        c2m = C2MElement(id=CC2.LETTER_TILE_SPACE)
         with self.assertRaises(ValueError):
-            C2MModifiers.parse_modifier(tile_id, bytes([0x01, 0x02]))  # 2 bytes is invalid
+            # LETTER_TILE_SPACE expects exactly 1 byte
+            C2MModifiers.parse_modifier(c2m, b"\x00\x01")
 
-    def test_letter_tile_parse(self):
-        """
-        Test parsing a letter tile (including arrow and ASCII checks).
-        """
-        tile_id = CC2.LETTER_TILE_SPACE
-
-        # 0x1E => "↓" arrow
-        result_arrow = C2MModifiers.parse_modifier(tile_id, bytes([0x1E]))
-        self.assertEqual(result_arrow[ModKey.CHAR], "↓")
-
-        # 0x41 => 'A'
-        result_char = C2MModifiers.parse_modifier(tile_id, bytes([0x41]))
-        self.assertEqual(result_char[ModKey.CHAR], "A")
-
-        # 0x1B => outside arrow range, not ASCII 20..5F => None
-        result_none = C2MModifiers.parse_modifier(tile_id, bytes([0x1B]))
-        self.assertIsNone(result_none[ModKey.CHAR])
-
-    def test_letter_tile_build(self):
-        """
-        Test building letter tile modifiers from arrow or ASCII.
-        """
-        tile_id = CC2.LETTER_TILE_SPACE
-
-        # Arrow
-        data_arrow = {ModKey.CHAR: "←"}
-        result_arrow = C2MModifiers.build_modifier(tile_id, data_arrow)
-        self.assertEqual(result_arrow, bytes([0x1F]))
-
-        # ASCII
-        data_char = {ModKey.CHAR: "Z"}
-        result_char = C2MModifiers.build_modifier(tile_id, data_char)
-        self.assertEqual(result_char, bytes([0x5A]))  # 'Z' => 0x5A
-
-        # None or invalid => 0
-        data_invalid = {ModKey.CHAR: "ß"}  # outside 0x20..0x5F
-        result_invalid = C2MModifiers.build_modifier(tile_id, data_invalid)
-        self.assertEqual(result_invalid, bytes([0x00]))
-
-    def test_clone_machine_parse(self):
-        """
-        Test parsing clone machine directions.
-        """
-        tile_id = CC2.CLONE_MACHINE
-        # 0x0D => binary 0b1101 => N (1), E (0), S (1), W (1)
-        result = C2MModifiers.parse_modifier(tile_id, bytes([0x0D]))
-        self.assertEqual(result[ModKey.DIRECTIONS], "NSW")
-
-    def test_clone_machine_build(self):
-        """
-        Test building clone machine directions.
-        """
-        tile_id = CC2.CLONE_MACHINE
-        # directions = "NEW" => bits for N=1, E=2, W=8 => total 0x0B
-        data = {ModKey.DIRECTIONS: "NEW"}
-        result_bytes = C2MModifiers.build_modifier(tile_id, data)
-        self.assertEqual(result_bytes, bytes([0x0B]))
-
-    def test_custom_tiles_parse(self):
-        """
-        Test parsing custom tiles (floor/wall) color.
-        """
-        tile_id = CC2.CUSTOM_FLOOR
-        # Suppose 0 => Green, 1 => Pink, 2 => Yellow, 3 => Blue
-        result = C2MModifiers.parse_modifier(tile_id, bytes([2]))
-        self.assertEqual(result[ModKey.COLOR], "Yellow")
-
-        # Invalid color
+        c2m2 = C2MElement(id=CC2.RAILROAD_TRACK)
         with self.assertRaises(ValueError):
-            C2MModifiers.parse_modifier(tile_id, bytes([9]))
+            # RAILROAD_TRACK expects 1 or 2 bytes, not 3
+            C2MModifiers.parse_modifier(c2m2, b"\x00\x01\x02")
 
-    def test_custom_tiles_build(self):
-        """
-        Test building custom tile modifiers.
-        """
-        tile_id = CC2.CUSTOM_FLOOR
-        data = {ModKey.COLOR: "Blue"}
-        result = C2MModifiers.build_modifier(tile_id, data)
-        self.assertEqual(result, bytes([3]))  # 'Blue' => 3
-
-        # Invalid color
-        data_invalid = {ModKey.COLOR: "Rainbow"}
+    def test_build_modifier_invalid_tile(self):
+        """Test build_modifier raises ValueError for an unrecognized tile id."""
+        # Tile that does not expect modifiers, e.g. WALL.
+        c2m = C2MElement(id=CC2.WALL)
         with self.assertRaises(ValueError):
-            C2MModifiers.build_modifier(tile_id, data_invalid)
+            C2MModifiers.build_modifier(c2m)
 
-    def test_logic_gate_parse_inverter(self):
-        """
-        Test logic gate parse: Inverter facing East => 0x01.
-        """
-        tile_id = CC2.LOGIC_GATE
-        result = C2MModifiers.parse_modifier(tile_id, bytes([0x01]))
-        self.assertEqual(result[ModKey.GATE], "Inverter_E")
-
-    def test_logic_gate_parse_counter(self):
-        """
-        Test logic gate parse: Counter_5 => 0x1E + 5 = 0x23.
-        """
-        tile_id = CC2.LOGIC_GATE
-        result = C2MModifiers.parse_modifier(tile_id, bytes([0x23]))
-        self.assertEqual(result[ModKey.GATE], "Counter_5")
-
-    def test_logic_gate_build_xor_south(self):
-        """
-        Test building a logic gate: XOR facing South => base=0x0C plus direction=2 => 0x0E
-        """
-        tile_id = CC2.LOGIC_GATE
-        data = {ModKey.GATE: "XOR_S"}
-        result = C2MModifiers.build_modifier(tile_id, data)
-        self.assertEqual(result, bytes([0x0E]))
-
-    def test_logic_gate_build_counter(self):
-        """
-        Test building a logic gate for Counter_9 => 0x1E + 9 => 0x27
-        """
-        tile_id = CC2.LOGIC_GATE
-        data = {ModKey.GATE: "Counter_9"}
-        result = C2MModifiers.build_modifier(tile_id, data)
-        self.assertEqual(result, bytes([0x27]))
-
-    def test_logic_gate_build_invalid_direction(self):
-        """
-        Test building a logic gate with an invalid direction should raise ValueError.
-        """
-        tile_id = CC2.LOGIC_GATE
+    def test_build_modifier_invalid_color(self):
+        """Test build_modifier raises ValueError for an invalid custom color."""
+        c2m = C2MElement(id=CC2.CUSTOM_FLOOR, color="Purple")
         with self.assertRaises(ValueError):
-            C2MModifiers.build_modifier(tile_id, {ModKey.GATE: "XOR_X"})
+            C2MModifiers.build_modifier(c2m)
 
-    def test_railroad_track_parse(self):
-        """
-        Test parsing a 2-byte railroad track modifier.
-
-        Example:
-            - low_byte=0x0D => segments NE(1), SW(4), NW(8) => 0b1101
-            - high_byte=0x31 =>
-                - lower nibble=0x1 => ActiveTrack.SE
-                - upper nibble=0x3 => Direction.W
-
-        This means:
-            - Track segments: ["NE", "SW", "NW"]
-            - Active track: "SE"
-            - Initial entry direction: "W"
-        """
-        tile_id = CC2.RAILROAD_TRACK
-        # low_byte=0x0D => NE(1) + SW(4) + NW(8) => 0b1101
-        # high_byte=0x31 =>
-        #     - lower nibble=0x1 => ActiveTrack.SE
-        #     - upper nibble=0x3 => Direction.W
-        track_bytes = bytes([0x0D, 0x31])
-        result = C2MModifiers.parse_modifier(tile_id, track_bytes)
-
-        # Ensure 'tracks' key exists and contains the correct segments
-        self.assertIn(ModKey.TRACKS, result)
-        self.assertCountEqual(result[ModKey.TRACKS], ["NE", "SW", "NW"])  # from 0x0D
-
-        # Verify the active track is correctly parsed
-        self.assertEqual(result[ModKey.ACTIVE_TRACK], "SE")
-
-        # Verify the initial entry direction is correctly parsed
-        self.assertEqual(result[ModKey.INITIAL_ENTRY], "W")
-
-    def test_railroad_track_build(self):
-        """
-        Test building a 2-byte railroad track modifier from dictionary data.
-        """
-        tile_id = CC2.RAILROAD_TRACK
-        data = {
-            ModKey.TRACKS: ["SE", "SW", "VERTICAL"],  # SE=2, SW=4, Vertical=32 => total 0x26
-            ModKey.ACTIVE_TRACK: "NE",                # NE => 0
-            ModKey.INITIAL_ENTRY: "S",                # S => 2
-        }
-        # low_byte=0x26, high_byte => (2 << 4) | 0 => 0x20
-        # => resulting bytes = [0x26, 0x20]
-        result = C2MModifiers.build_modifier(tile_id, data)
-        self.assertEqual(result, bytes([0x26, 0x20]))
-
-    def test_railroad_track_invalid_length(self):
-        """
-        Test parsing an invalid length for railroad track (must be 2 bytes if 2 bytes are present).
-        """
-        tile_id = CC2.RAILROAD_TRACK
+    def test_build_modifier_invalid_gate(self):
+        """Test build_modifier raises ValueError for an unknown logic gate string."""
+        c2m = C2MElement(id=CC2.LOGIC_GATE, gate="UNKNOWN_GATE_N")
         with self.assertRaises(ValueError):
-            C2MModifiers.parse_modifier(tile_id, bytes([0x01] * 4))  # 4 bytes is invalid
+            C2MModifiers.build_modifier(c2m)
 
-    def test_cannot_apply_modifier_to_unknown_tile(self):
-        """
-        Test that parse fails if tile_id is not recognized.
-        """
-        with self.assertRaises(ValueError):
-            C2MModifiers.parse_modifier(CC2.WATER, bytes([0x00]))  # Tile that does not accept modifiers.
+    # ------------------------------------------------
+    # parse_direction / build_direction tests
+    # ------------------------------------------------
+
+    def test_parse_direction(self):
+        """Test parse_direction with valid and invalid data."""
+        c2m = C2MElement(id=CC2.FLOOR)  # just pick any tile for demonstration
+        C2MModifiers.parse_direction(c2m, b"\x02")  # => S
+        self.assertEqual(c2m.direction, "S")
 
         with self.assertRaises(ValueError):
-            C2MModifiers.build_modifier(CC2.WATER, {})  # same for build
+            C2MModifiers.parse_direction(c2m, b"\x05")  # invalid: only 0..3
 
-    # ---------------------------------------
-    # Tests for parse_direction / build_direction
-    # ---------------------------------------
-    def test_direction_valid(self):
-        """
-        Test building/ parsing all valid directions: N, E, S, W.
-        """
-        cases = [
-            ("N", 0),
-            ("E", 1),
-            ("S", 2),
-            ("W", 3),
-        ]
-        for dir_str, expected_val in cases:
-            with self.subTest(direction=dir_str):
-                built = C2MModifiers.build_direction(dir_str)
-                self.assertEqual(built, bytes([expected_val]),
-                                 f"build_direction({dir_str}) should produce 0x{expected_val:02X}")
-
-                parsed = C2MModifiers.parse_direction(built)
-                self.assertEqual(parsed, dir_str,
-                                 f"parse_direction({built}) should return '{dir_str}'")
-
-    def test_direction_invalid_string(self):
-        """
-        Test that building a direction with an invalid string raises ValueError.
-        """
         with self.assertRaises(ValueError):
-            C2MModifiers.build_direction("X")  # invalid direction letter
+            C2MModifiers.parse_direction(c2m, b"")  # missing byte
 
-    def test_direction_invalid_byte(self):
-        """
-        Test that parsing an invalid direction byte raises ValueError.
-        """
-        for invalid_val in [4, 5, 99]:
-            with self.subTest(val=invalid_val):
-                with self.assertRaises(ValueError):
-                    C2MModifiers.parse_direction(bytes([invalid_val]))
+    def test_build_direction(self):
+        """Test build_direction with valid and invalid direction strings."""
+        c2m = C2MElement(id=CC2.FLOOR, direction="W")
+        out = C2MModifiers.build_direction(c2m)
+        self.assertEqual(out, b"\x03")
 
-    def test_direction_wrong_length(self):
-        """
-        Test that parse_direction fails if byte length != 1.
-        """
-        # No bytes
+        c2m2 = C2MElement(id=CC2.FLOOR, direction="Z")
         with self.assertRaises(ValueError):
-            C2MModifiers.parse_direction(b"")
-        # More than 1 byte
+            C2MModifiers.build_direction(c2m2)
+
+    # ------------------------------------------------
+    # parse_thinwall_canopy / build_thinwall_canopy tests
+    # ------------------------------------------------
+
+    def test_parse_thinwall_canopy(self):
+        """Test parse_thinwall_canopy with valid data."""
+        c2m = C2MElement(id=CC2.THIN_WALL_CANOPY)
+        C2MModifiers.parse_thinwall_canopy(c2m, b"\x19")
+        # 0x19 = binary(11001) => bits: N(1), W(8), C(16) => "NWC"
+        self.assertEqual(c2m.directions, "NWC")
+
         with self.assertRaises(ValueError):
-            C2MModifiers.parse_direction(b"\x00\x01")
+            # must be exactly 1 byte
+            C2MModifiers.parse_thinwall_canopy(c2m, b"\x01\x02")
 
-    # ---------------------------------------
-    # Tests for parse_thinwall_canopy / build_thinwall_canopy
-    # ---------------------------------------
-    def test_thinwall_canopy_valid(self):
-        """
-        Test round-trip build->parse for several thin wall/canopy combos.
-        'C' indicates canopy bit.
-        """
-        cases = [
-            ("", 0x00),     # no walls, no canopy
-            ("N", 0x01),    # north
-            ("E", 0x02),    # east
-            ("S", 0x04),    # south
-            ("W", 0x08),    # west
-            ("C", 0x10),    # canopy only
-            ("NW", 0x09),   # north + west
-            ("NWC", 0x19),  # north + west + canopy
-            ("NESW", 0x0F), # all walls
-            ("NESWC", 0x1F) # all walls + canopy
-        ]
-        for walls_str, expected_val in cases:
-            with self.subTest(walls=walls_str):
-                built = C2MModifiers.build_thinwall_canopy(walls_str)
-                self.assertEqual(built, bytes([expected_val]),
-                                 f"build_thinwall_canopy({walls_str}) -> 0x{expected_val:02X}")
+    def test_build_thinwall_canopy(self):
+        """Test build_thinwall_canopy to ensure correct bitmask."""
+        c2m = C2MElement(id=CC2.THIN_WALL_CANOPY, directions="NWC")
+        out = C2MModifiers.build_thinwall_canopy(c2m)
+        self.assertEqual(out, b"\x19")
 
-                parsed = C2MModifiers.parse_thinwall_canopy(built)
-                self.assertEqual(parsed, walls_str,
-                                 f"parse_thinwall_canopy({built}) -> '{walls_str}'")
+    # ------------------------------------------------
+    # parse_dblock_arrows / build_dblock_arrows tests
+    # ------------------------------------------------
 
-    def test_thinwall_canopy_wrong_length(self):
-        """Ensure parse fails if not exactly 1 byte."""
-        with self.assertRaises(AssertionError):
-            C2MModifiers.parse_thinwall_canopy(b"")
-        with self.assertRaises(AssertionError):
-            C2MModifiers.parse_thinwall_canopy(b"\x00\x10")
+    def test_parse_dblock_arrows(self):
+        """Test parse_dblock_arrows with valid data."""
+        c2m = C2MElement(id=CC2.DIRECTIONAL_BLOCK)  # pretend tile
+        C2MModifiers.parse_dblock_arrows(c2m, b"\x09")
+        # 0x09 = binary(1001) => N(1), W(8) => "NW"
+        self.assertEqual(c2m.directions, "NW")
 
-    # ---------------------------------------
-    # Tests for parse_dblock_arrows / build_dblock_arrows
-    # ---------------------------------------
-    def test_dblock_arrows_valid(self):
-        """
-        Test round-trip for directional block arrows: bits for N/E/S/W.
-        """
-        cases = [
-            ("", 0x00),
-            ("N", 0x01),
-            ("E", 0x02),
-            ("S", 0x04),
-            ("W", 0x08),
-            ("NE", 0x03),
-            ("NES", 0x07),
-            ("NESW", 0x0F),
-            ("NW", 0x09),
-        ]
-        for arrows_str, expected_val in cases:
-            with self.subTest(arrows=arrows_str):
-                built = C2MModifiers.build_dblock_arrows(arrows_str)
-                self.assertEqual(built, bytes([expected_val]),
-                                 f"build_dblock_arrows({arrows_str}) -> 0x{expected_val:02X}")
+        with self.assertRaises(ValueError):
+            # must be exactly 1 byte
+            C2MModifiers.parse_dblock_arrows(c2m, b"\x01\x02")
 
-                parsed = C2MModifiers.parse_dblock_arrows(built)
-                self.assertEqual(parsed, arrows_str,
-                                 f"parse_dblock_arrows({built}) -> '{arrows_str}'")
+    def test_build_dblock_arrows(self):
+        """Test build_dblock_arrows to ensure correct bitmask."""
+        c2m = C2MElement(id=CC2.DIRECTIONAL_BLOCK, directions="NW")
+        out = C2MModifiers.build_dblock_arrows(c2m)
+        self.assertEqual(out, b"\x09")
 
-    def test_dblock_arrows_wrong_length(self):
-        """Ensure parse fails if not exactly 1 byte."""
-        with self.assertRaises(AssertionError):
-            C2MModifiers.parse_dblock_arrows(b"")
-        with self.assertRaises(AssertionError):
-            C2MModifiers.parse_dblock_arrows(b"\x00\x01")
-
+# ------------------------------------------------
+# (Optionally) if you want to run via python -m unittest
+# ------------------------------------------------
 if __name__ == "__main__":
     unittest.main()

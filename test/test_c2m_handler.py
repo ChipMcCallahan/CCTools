@@ -20,9 +20,14 @@ import importlib.resources
 import logging
 import os
 import unittest
+from typing import List, Any
 
 from cc_tools.c2m_handler import C2MHandler
 
+def all_c2m_files() -> List[Any]:
+    c2m_path = importlib.resources.files('cc_tools.sets.c2m')
+    all_files = sum((read_all_files(d) for d in c2m_path.iterdir() if d.is_dir()), [])
+    return [file for file in all_files if str(file).lower().endswith(".c2m")]
 
 def read_all_files(directory):
     """
@@ -92,9 +97,7 @@ class TestC2MHandlerOnLocalLevels(unittest.TestCase):
         # Now test any local C2M files:
         c2m_path = importlib.resources.files('cc_tools.sets.c2m')
         # Flatten the list of file bytes:
-        all_c2m_files = sum((read_all_files(d) for d in c2m_path.iterdir() if d.is_dir()), [])
-
-        for file_bytes in all_c2m_files:
+        for file_bytes in all_c2m_files():
             try:
                 parsed_level = C2MHandler.Parser.parse_c2m(file_bytes)
             except ValueError as e:
@@ -143,10 +146,7 @@ class TestC2MHandlerOnLocalLevels(unittest.TestCase):
             - Parse the newly written bytes again
             - Ensure that both parsed namedtuples match exactly
         """
-        c2m_path = importlib.resources.files('cc_tools.sets.c2m')
-        all_c2m_files = sum((read_all_files(d) for d in c2m_path.iterdir() if d.is_dir()), [])
-
-        for idx, file_bytes in enumerate(all_c2m_files):
+        for idx, file_bytes in enumerate(all_c2m_files()):
             try:
                 parsed_level = C2MHandler.Parser.parse_c2m(file_bytes)
             except ValueError as e:
