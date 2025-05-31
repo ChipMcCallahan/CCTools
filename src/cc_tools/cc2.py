@@ -267,6 +267,17 @@ class CC2(Enum):
 
         # If no toggleable pair is found, return self.
         return self
+    
+    def layer(self):
+        if self in CC2.all_mobs():
+            return "mob"
+        if self in CC2.pickups():
+            return "pickup"
+        if self is CC2.THIN_WALL_CANOPY:
+            return "panel"
+        if self is CC2.NOT_ALLOWED_MARKER:
+            return "not_allowed"
+        return "terrain"
 
     @classmethod
     def values_with_hardcoded_directions(cls):

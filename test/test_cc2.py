@@ -5,6 +5,13 @@ class TestCC2Dirs(unittest.TestCase):
     """
     Tests related to the dirs(), with_dirs(), and directional manipulation methods.
     """
+    
+    def test_layer(self):
+        self.assertEqual(CC2.FORCE_N.layer(), "terrain")
+        self.assertEqual(CC2.BLOB.layer(), "mob")
+        self.assertEqual(CC2.FLIPPERS.layer(), "pickup")
+        self.assertEqual(CC2.NOT_ALLOWED_MARKER.layer(), "not_allowed")
+        self.assertEqual(CC2.THIN_WALL_CANOPY.layer(), "panel")
 
     def test_dirs_no_direction(self):
         """A tile with no direction suffix should return an empty string."""
