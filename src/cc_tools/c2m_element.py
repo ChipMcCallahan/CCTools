@@ -30,3 +30,6 @@ class C2MElement:
             if val is not None:
                 included.append(f"{f.name}={val!r}")
         return f"{self.__class__.__name__}({', '.join(included)})"
+
+    def layer(self) -> str:
+        return self.id.layer()
