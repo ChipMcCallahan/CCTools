@@ -349,6 +349,11 @@ print(CC2.FLIPPERS in CC2.pickups())    # True
 print(CC2.STEEL_WALL in CC2.walls())    # True
 print(CC2.SWIVEL_DOOR_NW.dirs())        # 'NW'
 print(CC2.FORCE_W.with_dirs('E'))       # CC2.FORCE_E
+print(CC2.BLOB.layer())                 # "mob"
+print(CC2.THIN_WALL_CANOPY.layer()      # "panel"
+print(CC2.NOT_ALLOWED_MARKER.layer()    # "not_allowed"
+print(CC2.FLIPPERS.layer()              # "pickup"
+print(CC2.FORCE_N.layer()               # "terrain"
 ```
 
 ### [C2MCell](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc_tools/cc1_cell.py) & [C2MElement](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc_tools/c2m_element.py)
