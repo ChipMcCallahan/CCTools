@@ -4,6 +4,7 @@ pip install git+https://github.com/ChipMcCallahan/CCTools.git
 ```
 Tools for working with CC1 (DAT) and CC2 (C2M) files.
 
+## CC1 API
 ### [CC1 Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc_tools/cc1.py)
 ```python
 from cc_tools import CC1
@@ -267,28 +268,6 @@ diag1 = CC1LevelTransformer.flip_ne_sw(level)
 diag2 = CC1LevelTransformer.flip_nw_se(level)
 ```
 
-
-### [C2MHandler Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc_tools/c2m_handler.py) (Limited Functionality)
-```python
-from cc_tools import C2MHandler
-```
-This class is intended to obfuscate everything related to working with CC2 C2M file formats, as well as fetching files from the [Gliderbot](https://bitbusters.club/gliderbot/sets/cc2/) repository.
-
-- **This class is experimental and has limited functionality. Use at your own risk.**
-#### C2M Parsing
-- Can parse C2M bytes to a tuple (not very useful yet).
-```python
-with open("local_file.c2m", "rb") as f:
-    parsed_tuple = C2MHandler.Parser.parse_c2m(f.read())
-```
-
-#### C2M Packing and Unpacking
-- Can pack and unpack C2M map data.
-```python
-unpacked = C2MHandler.Parser.unpack(parsed_tuple.packed_map)
-repacked = C2MHandler.Packer.pack(unpacked)
-```
-
 ### [TWSHandler Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc_tools/tws_handler.py) (Limited Functionality)
 ```python
 from cc_tools import TWSHandler
@@ -355,6 +334,140 @@ Example:
 imager.save_set_png(cc1, "cc1.png")
 ```
 ![image](https://user-images.githubusercontent.com/87612918/229226143-ae1e1d6c-b789-4d0a-a8ed-6e25e58a775b.png)
+
+## CC2 API
+### [CC2 Enum](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc_tools/cc2.py)
+```python
+from cc_tools import CC2
+
+print(CC2.ICE_NE.right())               # CC2.ICE_SE
+print(CC2.FORCE_N.reverse())            # CC2.FORCE_S
+print(CC2.GREEN_CHIP.toggle())          # CC2.GREEN_BOMB
+print(CC2.BLOB in CC2.monsters())       # True
+print(CC2.DIRT_BLOCK in CC2.blocks())   # True
+print(CC2.FLIPPERS in CC2.pickups())    # True
+print(CC2.STEEL_WALL in CC2.walls())    # True
+print(CC2.SWIVEL_DOOR_NW.dirs())        # 'NW'
+print(CC2.FORCE_W.with_dirs('E'))       # CC2.FORCE_E
+```
+
+### [C2MCell](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc_tools/cc1_cell.py) & [C2MElement](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc_tools/c2m_element.py)
+Allowed layers are [panel, mob, not_allowed, pickup, terrain].
+```python
+from cc_tools.cc2 import CC2
+from cc_tools.c2m_cell import C2MCell
+from cc_tools.c2m_element import C2MElement
+
+terrain_floor   = C2MElement(CC2.FLOOR)                 
+pickup_flippers = C2MElement(CC2.FLIPPERS)              
+player_chip     = C2MElement(CC2.CHIP, direction='E')
+cell = C2MCell(mob=player_chip,
+                     pickup=pickup_flippers,
+                     terrain=terrain_floor)
+
+
+switch_cell  = C2MCell(terrain=C2MElement(CC2.SWITCH_OFF,  wires='E'))
+toggle_cell  = C2MCell(terrain=C2MElement(CC2.GREEN_TOGGLE_FLOOR, wires='SW'))
+
+track_tile = C2MElement(CC2.RAILROAD_TRACK,
+                        tracks=['NE', 'SW'],
+                        active_track='NE',
+                        direction='S')
+track_cell = C2MCell(terrain=track_tile)
+
+dir_block  = C2MElement(CC2.DIRECTIONAL_BLOCK, direction='N')
+gravel     = C2MElement(CC2.GRAVEL)
+block_cell = C2MCell(mob=dir_block, terrain=gravel)
+
+panel      = C2MElement(CC2.THIN_WALL_CANOPY)
+forbidden  = C2MElement(CC2.NOT_ALLOWED_MARKER)
+wall_cell  = C2MCell(panel=panel, not_allowed=forbidden)
+```
+
+### [C2MModifiers](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc_tools/c2m_modifiers.py)
+```python
+from cc_tools.cc2 import CC2
+from cc_tools.c2m_element import C2MElement
+from cc_tools.c2m_modifiers import C2MModifiers
+
+switch = C2MElement(CC2.SWITCH_ON, wires="NS", wire_tunnels="E")
+raw1   = C2MModifiers.build_modifier(switch)                # raw1 == b'\x25'
+parsed1 = C2MElement(CC2.SWITCH_ON); C2MModifiers.parse_modifier(parsed1, raw1)   # parsed1.wires == 'NS'; parsed1.wire_tunnels == 'E'
+
+letter = C2MElement(CC2.LETTER_TILE_SPACE, char='A')
+raw2   = C2MModifiers.build_modifier(letter)                # raw2 == b'\x41'
+parsed2 = C2MElement(CC2.LETTER_TILE_SPACE); C2MModifiers.parse_modifier(parsed2, raw2)   # parsed2.char == 'A'
+
+clone = C2MElement(CC2.CLONE_MACHINE, directions='EW')
+raw3  = C2MModifiers.build_modifier(clone)                  # raw3 == b'\x0A'
+parsed3 = C2MElement(CC2.CLONE_MACHINE); C2MModifiers.parse_modifier(parsed3, raw3)   # parsed3.directions == 'EW'
+
+cwall = C2MElement(CC2.CUSTOM_WALL, color='Pink')
+raw4  = C2MModifiers.build_modifier(cwall)                  # raw4 == b'\x01'
+parsed4 = C2MElement(CC2.CUSTOM_WALL); C2MModifiers.parse_modifier(parsed4, raw4)   # parsed4.color == 'Pink'
+
+gate  = C2MElement(CC2.LOGIC_GATE, gate='NAND_W')
+raw5  = C2MModifiers.build_modifier(gate)                   # raw5 == b'\x17'
+parsed5 = C2MElement(CC2.LOGIC_GATE); C2MModifiers.parse_modifier(parsed5, raw5)   # parsed5.gate == 'NAND_W'
+
+track = C2MElement(CC2.RAILROAD_TRACK, tracks=['NE','SW'], active_track='SW', initial_entry='E')
+raw6  = C2MModifiers.build_modifier(track)                  # raw6 == b'\x05\x12'
+parsed6 = C2MElement(CC2.RAILROAD_TRACK); C2MModifiers.parse_modifier(parsed6, raw6)
+# parsed6.tracks == ['NE','SW']; parsed6.active_track == 'SW'; parsed6.initial_entry == 'E'
+```
+
+### [C2MMapDecoder](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc_tools/c2m_map_decoder.py) & [C2MMapEncoder](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc_tools/c2m_map_encoder.py)
+```python
+from cc_tools.c2m_cell        import C2MCell
+from cc_tools.c2m_element     import C2MElement
+from cc_tools.c2m_map_encoder import C2MMapEncoder
+from cc_tools.c2m_map_decoder import C2MMapDecoder
+from cc_tools.cc2             import CC2
+
+row0_col0 = C2MCell(terrain=C2MElement(CC2.FLOOR))
+row0_col1 = C2MCell(
+    panel   = C2MElement(CC2.SWITCH_ON, wires='N'),
+    terrain = C2MElement(CC2.FLOOR))
+row1_col0 = C2MCell(
+    mob     = C2MElement(CC2.CHIP, direction='E'),
+    terrain = C2MElement(CC2.FLOOR))
+row1_col1 = C2MCell(
+    panel   = C2MElement(CC2.THIN_WALL_CANOPY, directions='NWC'), 
+    terrain = C2MElement(CC2.GRAVEL))
+
+grid = [[row0_col0, row0_col1],
+        [row1_col0, row1_col1]]
+
+raw_map  = C2MMapEncoder(grid).encode()
+# raw_map some byte string like b'\x02\x02\x01\x76\x01\x89\x01\x16\x01\x01\x6D\x19\x1E'   
+decoded  = C2MMapDecoder(raw_map).decode()
+
+assert decoded[0][1].panel.wires          == 'N'
+assert decoded[1][0].mob.id               is CC2.CHIP
+assert decoded[1][1].panel.directions     == 'NWC'
+assert decoded[0][0].terrain.id           is CC2.FLOOR
+```
+
+
+### [C2MHandler Class](https://github.com/ChipMcCallahan/CCTools/blob/main/src/cc_tools/c2m_handler.py) (Limited Functionality)
+```python
+from cc_tools import C2MHandler
+```
+This class is intended to obfuscate everything related to working with CC2 C2M file formats, as well as fetching files from the [Gliderbot](https://bitbusters.club/gliderbot/sets/cc2/) repository.
+
+#### C2M Parsing
+- Can parse C2M bytes to a tuple (not very useful yet).
+```python
+with open("local_file.c2m", "rb") as f:
+    parsed_tuple = C2MHandler.Parser.parse_c2m(f.read())
+```
+
+#### C2M Packing and Unpacking
+- Can pack and unpack C2M map data.
+```python
+unpacked = C2MHandler.Parser.unpack(parsed_tuple.packed_map)
+repacked = C2MHandler.Packer.pack(unpacked)
+```
 
 # Enjoy!
 - Please submit bugs, feature requests, or general feedback to thisischipmccallahan@gmail.com.
