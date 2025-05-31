@@ -3,6 +3,6 @@ bs4~=0.0.1
 
 ###### Requirements with Version Specifiers ######`
 beautifulsoup4==4.11.2
-setuptools==67.6.0
+setuptools>=70
 requests~=2.31.0
-Pillow~=10.1.0
+Pillow>=11
