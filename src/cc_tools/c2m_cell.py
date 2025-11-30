@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Literal
 
 from cc_tools.c2m_element import C2MElement
 
@@ -31,3 +31,57 @@ class C2MCell:
             if value is not None
         ]
         return f"C2MCell({', '.join(fields)})"
+
+    # ----------------------------------------------------------------------
+    #  Rotation helpers
+    # ----------------------------------------------------------------------
+    _LAYERS = ("panel", "mob", "not_allowed", "pickup", "terrain")
+
+    def _rotated(self, turn: Literal["right", "left", "reverse"]) -> "C2MCell":
+        """
+        Internal helper used by .right(), .left() and .reverse().
+        Produces a *new* C2MCell whose non-empty elements are rotated.
+        """
+        kwargs = {}
+        for layer in self._LAYERS:
+            elt = getattr(self, layer)
+            if elt is not None:                         # C2MElement already provides .right/.left/.reverse
+                kwargs[layer] = getattr(elt, turn)()    # call it, store rotated copy
+        return C2MCell(**kwargs)
+
+    def right(self) -> "C2MCell":
+        """Return a new cell rotated 90° clockwise."""
+        return self._rotated("right")
+
+    def left(self) -> "C2MCell":
+        """Return a new cell rotated 90° counter-clockwise."""
+        return self._rotated("left")
+
+    def reverse(self) -> "C2MCell":
+        """Return a new cell rotated 180°."""
+        return self._rotated("reverse")
+
+    # ----------------------------------------------------------------------
+    #  Mutating helpers
+    # ----------------------------------------------------------------------
+    def add(self, element: "C2MElement") -> "C2MCell":
+        """
+        Insert or replace an element in the correct layer, as decided
+        by `element.layer()`.  Returns *self* so you can chain calls.
+
+            cell.add(e1).add(e2)
+        """
+        layer = element.layer()
+        if layer not in self._LAYERS:
+            raise ValueError(f"unrecognised layer {layer!r} for {element!r}")
+        setattr(self, layer, element)
+        return self
+
+    def clear(self) -> "C2MCell":
+        """
+        Remove everything from the cell (sets all layers to None).
+        Returns *self* for chaining.
+        """
+        for layer in self._LAYERS:
+            setattr(self, layer, None)
+        return self
