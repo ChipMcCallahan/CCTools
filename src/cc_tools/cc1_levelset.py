@@ -11,3 +11,6 @@ class CC1Levelset:
 
     def __str__(self):
         return f"{{CC1Levelset, {len(self.levels)} levels}}"
+
+    def __eq__(self, other):
+        return isinstance(other, CC1Levelset) and self.levels == other.levels
